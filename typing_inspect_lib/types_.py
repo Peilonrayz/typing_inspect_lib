@@ -42,7 +42,6 @@ class Type:
                 return False
         else:
             if self.typing != other.typing:
-                print('typing', self.typing, other.typing)
                 return False
             if self.class_ != other.class_:
                 return False

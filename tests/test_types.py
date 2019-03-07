@@ -23,8 +23,12 @@ TReturn = typing.TypeVar('TReturn')
 VERSION = sys.version_info[:3]
 PY35 = VERSION[:2] == (3, 5)
 PY36 = VERSION[:2] == (3, 6)
-# This is because in Python 3.6.0-? The result from `class T(List[TK][TK]):` `T[TK][int]` isn't of type List
-_AFTER_AMOUNT = 1 if PY36 else 2
+# This is because in Python 3.6.0-? and 3.5.3 The result from `class T(List[TK][TK]):` `T[TK][int]` isn't of type List
+_STOP = 3 if PY36 or VERSION == (3, 5, 3) else 4
+
+
+def eq(i, j):
+    return i == j
 
 
 class BaseTestCase(TestCase):
@@ -51,25 +55,20 @@ class BaseTestCase(TestCase):
         self.assertEqual(tuple(bool(int(i)) for i in '{:0>11b}'.format(is_)), self._is(type_))
         self.assertEqual(t, typing_inspect_lib.build_types(type_))
 
-    def class_test(self, type_, typing_, class_, is_, t_args=None, args=None, before=2, after=_AFTER_AMOUNT):
-        if t_args is None and args is None:
-            self.assertEqual(is_, typing_inspect_lib.get_special_type(type_))
-            t = typing_inspect_lib.Type(typing_, class_, args)
-            self.assertEqual(t, typing_inspect_lib.build_types(type_))
-        else:
-            for base, obj, special, unwrapped, args in _build_tests(type_, t_args, args, before, after):
-                if not special and unwrapped and all(a in t_args for a in args):
-                    args = None
-                else:
-                    args = [typing_inspect_lib.build_types(a) for a in args] or None
+    def class_test(self, type_, typing_, class_, is_, t_args=None, args=None, start=0, stop=_STOP, obj=2, fn=lambda i, j: i >= j):
+        for base, obj, special, unwrapped, args in _build_tests(type_, t_args, args, start, stop, obj, fn):
+            if not special and unwrapped and all(a in t_args for a in args):
+                args = None
+            else:
+                args = [typing_inspect_lib.build_types(a) for a in args] or None
 
-                if special:
-                    t = typing_inspect_lib.Type(typing_, class_, args)
-                    self.assertEqual(is_, typing_inspect_lib.get_special_type(obj))
-                else:
-                    t = typing_inspect_lib.Type(base, base, args)
-                    self.assertEqual(None, typing_inspect_lib.get_special_type(obj))
-                self.assertEqual(t, typing_inspect_lib.build_types(obj))
+            if special:
+                t = typing_inspect_lib.Type(typing_, class_, args)
+                self.assertTrue(is_ is typing_inspect_lib.get_special_type(obj))
+            else:
+                t = typing_inspect_lib.Type(base, base, args)
+                self.assertTrue(None is typing_inspect_lib.get_special_type(obj))
+            self.assertEqual(t, typing_inspect_lib.build_types(obj))
 
 
 class SpecialTestCase(BaseTestCase):
@@ -84,15 +83,10 @@ class SpecialTestCase(BaseTestCase):
     @skipIf(PY35 and VERSION <= (3, 5, 2),
             'ClassVar not in 3.5.[0,2]')
     def test_class_var(self):
-        _is = 0b00000000100
-        self.type_test(typing.ClassVar, typing.ClassVar, typing.ClassVar, None, _is)
-        self.type_test(typing.ClassVar[TValue], typing.ClassVar, typing.ClassVar, [TValue], _is)
-        # self.class_test(typing.ClassVar, typing.ClassVar, typing.ClassVar, typing.ClassVar, [TValue], [int])
+        self.class_test(typing.ClassVar, typing.ClassVar, typing.ClassVar, typing.ClassVar, [TValue], [int], stop=1)
 
     def test_generic(self):
-        _is = 0b10000000000
-        self.type_test(typing.Generic, typing.Generic, typing.Generic, None, _is)
-        self.type_test(typing.Generic[TKey, TValue], typing.Generic, typing.Generic, [TKey, TValue], _is)
+        self.class_test(typing.Generic, typing.Generic, typing.Generic, typing.Generic, [TKey, TValue], [str, int], start=1, obj=1, stop=2)
 
     def test_optional(self):
         _is_optional = 0b00001000000
@@ -101,16 +95,12 @@ class SpecialTestCase(BaseTestCase):
         self.type_test(typing.Optional[TValue], typing.Union, typing.Union, [TValue, type(None)], _is_union)
 
     def test_tuple(self):
-        _is = 0b01000000000
-        self.type_test(typing.Tuple, typing.Tuple, tuple, None, _is)
-        self.type_test(typing.Tuple[TKey, TValue], typing.Tuple, tuple, [TKey, TValue], _is)
+        self.class_test(typing.Tuple, typing.Tuple, tuple, typing.Tuple, [TKey, TValue], [str, int], stop=1)
 
     @skipIf(PY35 and VERSION <= (3, 5, 1),
             'Type not in 3.5.[0,1]')
     def test_type(self):
-        _is = 0b00000000000
-        self.type_test(typing.Type, typing.Type, type, None, _is)
-        self.type_test(typing.Type[TValue], typing.Type, type, [TValue], _is)
+        self.class_test(typing.Type, typing.Type, type, typing.Type, [TValue], [int])
 
     def test_type_var(self):
         self.assertEqual(typing_inspect_lib.build_types(TKey), typing_inspect_lib.VarType(TKey))
@@ -119,9 +109,7 @@ class SpecialTestCase(BaseTestCase):
         self.assertEqual(typing_inspect_lib.build_types(TReturn), typing_inspect_lib.VarType(TReturn))
 
     def test_union(self):
-        _is = 0b010000000
-        self.type_test(typing.Union, typing.Union, typing.Union, None, _is)
-        self.type_test(typing.Union[TKey, TValue], typing.Union, typing.Union, [TKey, TValue], _is)
+        self.class_test(typing.Union, typing.Union, typing.Union, typing.Union, [TKey, TValue], [str, int], stop=1, fn=eq)
 
 
 class ABCTestCase(BaseTestCase):
@@ -160,18 +148,13 @@ class ABCTestCase(BaseTestCase):
         self.class_test(typing.KeysView, typing.KeysView, _abc.KeysView, None, [TKey], [int])
 
     def test_mapping(self):
-        _is = 0b00000000000
-        self.type_test(typing.Mapping, typing.Mapping, _abc.Mapping, None, _is)
-        self.type_test(typing.Mapping[TKey, TValue], typing.Mapping, _abc.Mapping, [TKey, TValue], _is)
-        # self.class_test(typing.Mapping, typing.Mapping, _abc.Mapping, None, [TKey, TValue], [int, str])
+        self.class_test(typing.Mapping, typing.Mapping, _abc.Mapping, None, [TKey, TValue], [int, str], fn=eq)
 
     def test_mapping_view(self):
         self.class_test(typing.MappingView, typing.MappingView, _abc.MappingView, None, [TKey], [int])
 
     def test_mutable_mapping(self):
-        _is = 0b00000000000
-        self.type_test(typing.MutableMapping, typing.MutableMapping, _abc.MutableMapping, None, _is)
-        self.type_test(typing.MutableMapping[TKey, TValue], typing.MutableMapping, _abc.MutableMapping, [TKey, TValue], _is)
+        self.class_test(typing.MutableMapping, typing.MutableMapping, _abc.MutableMapping, None, [TKey, TValue], [int, str], fn=eq)
 
     def test_mutable_sequence(self):
         self.class_test(typing.MutableSequence, typing.MutableSequence, _abc.MutableSequence, None, [TValue], [int])
@@ -202,9 +185,7 @@ class ABCTestCase(BaseTestCase):
 
     @skipIf(VERSION < (3, 5, 3), 'Coroutine requires Python 3.5.3')
     def test_coroutine(self):
-        _is = 0b00000000000
-        self.type_test(typing.Coroutine, typing.Coroutine, _abc.Coroutine, None, _is)
-        self.type_test(typing.Coroutine[TValue, TSend, TReturn], typing.Coroutine, _abc.Coroutine, [TValue, TSend, TReturn], _is)
+        self.class_test(typing.Coroutine, typing.Coroutine, _abc.Coroutine, None, [TKey, TSend, TReturn], [int, str, str], fn=eq)
 
     @skipIf(VERSION < (3, 6, 0), 'Collection requires Python 3.6')
     def test_collection(self):
@@ -212,9 +193,7 @@ class ABCTestCase(BaseTestCase):
 
     @skipIf(VERSION < (3, 6, 1), 'AsyncGenerator requires Python 3.6.1')
     def test_async_generator(self):
-        _is = 0b00000000000
-        self.type_test(typing.AsyncGenerator, typing.AsyncGenerator, _abc.AsyncGenerator, None, _is)
-        self.type_test(typing.AsyncGenerator[TValue, TSend], typing.AsyncGenerator, _abc.AsyncGenerator, [TValue, TSend], _is)
+        self.class_test(typing.AsyncGenerator, typing.AsyncGenerator, _abc.AsyncGenerator, None, [TKey, TSend], [int, str], fn=eq)
 
     @skipIf(
         VERSION < (3, 5, 4)
@@ -258,9 +237,7 @@ class CollectionTestCase(BaseTestCase):
     @skipIf(VERSION < (3, 3, 0) or (PY35 and VERSION <= (3, 5, 3)) or VERSION == (3, 6, 0),
             'ChainMap requires 3.3 and not in 3.5.[0,3] or 3.6.0')
     def test_chain_map(self):
-        _is = 0b00000000000
-        self.type_test(typing.ChainMap, typing.ChainMap, collections.ChainMap, None, _is)
-        self.type_test(typing.ChainMap[TKey, TValue], typing.ChainMap, collections.ChainMap, [TKey, TValue], _is)
+        self.class_test(typing.ChainMap, typing.ChainMap, collections.ChainMap, None, [TKey, TValue], [int, str], fn=eq)
 
     @skipIf((PY35 and VERSION <= (3, 5, 3)) or VERSION == (3, 6, 0),
             'Deque not in 3.5.[0,3] or 3.6.0')
@@ -270,16 +247,12 @@ class CollectionTestCase(BaseTestCase):
     def test_dict(self):
         dict_ = _abc.MutableMapping if PY35 and (VERSION <= (3, 5, 1)) else dict
 
-        _is = 0b00000000000
-        self.type_test(typing.Dict, typing.Dict, dict_, None, _is)
-        self.type_test(typing.Dict[TKey, TValue], typing.Dict, dict_, [TKey, TValue], _is)
+        self.class_test(typing.Dict, typing.Dict, dict_, None, [TKey, TValue], [int, str], fn=eq)
 
     @skipIf((PY35 and VERSION <= (3, 5, 1)),
             'DefaultDict not in 3.5.[0,1]')
     def test_default_dict(self):
-        _is = 0b00000000000
-        self.type_test(typing.DefaultDict, typing.DefaultDict, collections.defaultdict, None, _is)
-        self.type_test(typing.DefaultDict[TKey, TValue], typing.DefaultDict, collections.defaultdict, [TKey, TValue], _is)
+        self.class_test(typing.DefaultDict, typing.DefaultDict, collections.defaultdict, None, [TKey, TValue], [int, str], fn=eq)
 
     def test_list(self):
         list_ = _abc.MutableSequence if PY35 and (VERSION <= (3, 5, 1)) else list
@@ -304,14 +277,10 @@ class CollectionTestCase(BaseTestCase):
 
     @skipIf(VERSION < (3, 7, 2), 'OrderedDict requires Python 3.7.2')
     def test_ordered_dict(self):
-        _is = 0b00000000000
-        self.type_test(typing.OrderedDict, typing.OrderedDict, collections.OrderedDict, None, _is)
-        self.type_test(typing.OrderedDict[TKey, TValue], typing.OrderedDict, collections.OrderedDict, [TKey, TValue], _is)
+        self.class_test(typing.OrderedDict, typing.OrderedDict, collections.OrderedDict, None, [TKey, TValue], [int, str], fn=eq)
 
     def test_generator(self):
-        _is = 0b00000000000
-        self.type_test(typing.Generator, typing.Generator, _abc.Generator, None, _is)
-        self.type_test(typing.Generator[TValue, TSend, TReturn], typing.Generator, _abc.Generator, [TValue, TSend, TReturn], _is)
+        self.class_test(typing.Generator, typing.Generator, _abc.Generator, None, [TValue, TSend, TReturn], [int, str, str], fn=eq)
 
 
 class OneOffTestCase(BaseTestCase):
@@ -355,14 +324,10 @@ class ExtensionsTestCase(BaseTestCase):
 
     # Special
     def test_class_var(self):
-        _is = 0b000000100
-        self.type_test(typing_extensions.ClassVar, typing_inspect_lib.ClassVar_, typing_inspect_lib.ClassVar_, None, _is)
-        self.type_test(typing_extensions.ClassVar[TValue], typing_inspect_lib.ClassVar_, typing_inspect_lib.ClassVar_, [TValue], _is)
+        self.class_test(typing_extensions.ClassVar, typing_inspect_lib.ClassVar_, typing_inspect_lib.ClassVar_, typing_inspect_lib.ClassVar_, [TValue], [int], stop=1)
 
     def test_type(self):
-        _is = 0b00000000000
-        self.type_test(typing_extensions.Type, typing_extensions.Type, type, None, _is)
-        self.type_test(typing_extensions.Type[TValue], typing_extensions.Type, type, [TValue], _is)
+        self.class_test(typing_extensions.Type, typing_extensions.Type, type, typing_extensions.Type, [TValue], [int])
 
     # ABCs
     def test_context_manager(self):
@@ -382,15 +347,11 @@ class ExtensionsTestCase(BaseTestCase):
 
     @skipIf(VERSION < (3, 5, 0), 'te.Coroutine requires Python 3.5')
     def test_coroutine(self):
-        _is = 0b00000000000
-        self.type_test(typing_extensions.Coroutine, typing_extensions.Coroutine, _abc.Coroutine, None, _is)
-        self.type_test(typing_extensions.Coroutine[TValue, TSend, TReturn], typing_extensions.Coroutine, _abc.Coroutine, [TValue, TSend, TReturn], _is)
+        self.class_test(typing_extensions.Coroutine, typing_extensions.Coroutine, _abc.Coroutine, None, [TKey, TSend, TReturn], [int, str, str], fn=eq)
 
     @skipIf(VERSION < (3, 6, 0), 'te.AsyncGenerator requires Python 3.6')
     def test_async_generator(self):
-        _is = 0b00000000000
-        self.type_test(typing_extensions.AsyncGenerator, typing_extensions.AsyncGenerator, _abc.AsyncGenerator, None, _is)
-        self.type_test(typing_extensions.AsyncGenerator[TValue, TSend], typing_extensions.AsyncGenerator, _abc.AsyncGenerator, [TValue, TSend], _is)
+        self.class_test(typing_extensions.AsyncGenerator, typing_extensions.AsyncGenerator, _abc.AsyncGenerator, None, [TKey, TSend], [int, str], fn=eq)
 
     @skipIf(VERSION < (3, 5, 0), 'te.AsyncContextManager requires Python 3.5')
     def test_async_context_manager(self):
@@ -398,9 +359,7 @@ class ExtensionsTestCase(BaseTestCase):
 
     @skipIf(VERSION < (3, 3, 0), 'te.ChainMap requires Python 3.3')
     def test_chain_map(self):
-        _is = 0b00000000000
-        self.type_test(typing_extensions.ChainMap, typing_extensions.ChainMap, collections.ChainMap, None, _is)
-        self.type_test(typing_extensions.ChainMap[TKey, TValue], typing_extensions.ChainMap, collections.ChainMap, [TKey, TValue], _is)
+        self.class_test(typing_extensions.ChainMap, typing_extensions.ChainMap, collections.ChainMap, None, [TKey, TValue], [int, str], fn=eq)
 
     # collection
     def test_counter(self):
@@ -415,9 +374,7 @@ class ExtensionsTestCase(BaseTestCase):
         self.class_test(typing_extensions.Deque, typing_extensions.Deque, collections.deque, None, [TValue], [int])
 
     def test_default_dict(self):
-        _is = 0b00000000000
-        self.type_test(typing_extensions.DefaultDict, typing_extensions.DefaultDict, collections.defaultdict, None, _is)
-        self.type_test(typing_extensions.DefaultDict[TKey, TValue], typing_extensions.DefaultDict, collections.defaultdict, [TKey, TValue], _is)
+        self.class_test(typing_extensions.DefaultDict, typing_extensions.DefaultDict, collections.defaultdict, None, [TKey, TValue], [int, str], fn=eq)
 
     # One-off
     def test_new_type(self):
