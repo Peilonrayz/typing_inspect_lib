@@ -57,6 +57,13 @@ if _VERSION >= (3, 7, 0):
     _WRAPPED_SPECIAL_TYPES[type] = typing.Type
 
 
+def _get_safe(dict_, key):
+    try:
+        return dict_.get(key)
+    except TypeError:
+        return None
+
+
 def _get_special_uni(type_):
     if isinstance(type_, typing.TypeVar):
         return typing.TypeVar
@@ -69,21 +76,13 @@ def _get_special_uni(type_):
 
 if _PY_OLD:
     def get_special_type(type_):
-        try:
-            base_type = _SPECIAL_TYPES.get(type_)
-        except TypeError:
-            pass
-        else:
-            if base_type is not None:
-                return base_type
+        base_type = _get_safe(_SPECIAL_TYPES, type_)
+        if base_type is not None:
+            return base_type
         t = type(type_)
-        try:
-            unwrapped = _WRAPPED_SPECIAL_TYPES.get(t)
-        except TypeError:
-            pass
-        else:
-            if unwrapped is not None:
-                return unwrapped
+        unwrapped = _get_safe(_WRAPPED_SPECIAL_TYPES, t)
+        if unwrapped is not None:
+            return unwrapped
         if t is typing.GenericMeta:
             # To allow <type>[T] to return correctly
             if getattr(type_, '__origin__', None) is typing.Generic:
@@ -93,21 +92,13 @@ if _PY_OLD:
         return _get_special_uni(type_)
 else:
     def get_special_type(type_):
-        try:
-            base_type = _SPECIAL_TYPES.get(type_)
-        except TypeError:
-            pass
-        else:
-            if base_type is not None:
-                return base_type
+        base_type = _get_safe(_SPECIAL_TYPES, type_)
+        if base_type is not None:
+            return base_type
         if isinstance(type_, typing._GenericAlias):
-            try:
-                unwrapped = _WRAPPED_SPECIAL_TYPES.get(type_.__origin__)
-            except TypeError:
-                pass
-            else:
-                if unwrapped is not None:
-                    return unwrapped
+            unwrapped = _get_safe(_WRAPPED_SPECIAL_TYPES, type_.__origin__)
+            if unwrapped is not None:
+                return unwrapped
         return _get_special_uni(type_)
 
 
@@ -148,18 +139,6 @@ else:
         return None, False
 
 
-def _is_builtin(type_):
-    module = getattr(type_, '__module__', None)
-    name = getattr(type_, '__name__', None)
-    if module is None or name is None:
-        return None
-    if module in {'typing', 'typing_extensions'}:
-        t = getattr(globals()[module], name, None)
-        if t is not None:
-            return t == _get_wrapped_typing(type_)
-    return False
-
-
 if _PY_OLD:
     def _get_wrapped_typing(type_):
         gorg = getattr(type_, '_gorg', None)
@@ -195,13 +174,34 @@ else:
     _CLASS_LOC = '__origin__'
 
 
+def _is_builtin(type_):
+    module = getattr(type_, '__module__', None)
+    name = getattr(type_, '__name__', None)
+    if module is None or name is None:
+        return None
+    if module in {'typing', 'typing_extensions'}:
+        t = getattr(globals()[module], name, None)
+        if t is not None:
+            return t == type_
+    return False
+
+
+_OLD_CLASS = {
+    (typing.Dict, abc.MutableMapping): dict,
+    (typing.List, abc.MutableSequence): list,
+    (typing.Set, abc.MutableSet): set,
+    (typing.FrozenSet, abc.Set): frozenset
+}
+
+
 if _PY35 and _VERSION <= (3, 5, 1):
-    def _get_generic_class(type_):
-        if _is_builtin(type_):
-            return getattr(type_, _CLASS_LOC, None)
+    def _get_generic_class(type_, typing_):
+        if _is_builtin(typing_):
+            t = getattr(type_, _CLASS_LOC, None)
+            return _OLD_CLASS.get((typing_, t), t)
         return None
 else:
-    def _get_generic_class(type_):
+    def _get_generic_class(type_, typing_):
         return getattr(type_, _CLASS_LOC, None)
 
 
@@ -238,9 +238,10 @@ def _get_typing(type_):
 
     generic_type, base = get_generic_type(type_)
     if generic_type is not None:
-        if base:
-            return type_, _get_generic_class(type_)
-        return _get_wrapped_typing(type_), _get_generic_class(type_)
+        typing_ = type_
+        if not base:
+            typing_ = _get_wrapped_typing(type_)
+        return typing_, _get_generic_class(type_, typing_)
     return _get_other_typing(type_), None
 
 

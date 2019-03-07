@@ -77,6 +77,12 @@ Exposes four public functions:
 
 # Python compatibility
 
+## Incompatibilities between versions
+
+- <3.5.[0-1]> Passing `get_args(typing_extensions.Counter[T])` returns `(T, int)` rather than `(T,)`.
+
+## Compatibility objects
+
 Help! I'm using Python 3.5.1 and 3.6 and don't have access to `typing.ClassVar` in 3.5.1. What do I do?  
 There are two ways to fix this:
 
@@ -109,25 +115,18 @@ There are two ways to fix this:
     assert get_special_type(ClassVar_[int]) is ClassVar_ # Error in 3.5.1
     ```
 
-## When should I use these compatibility objects?
+### When should I use these compatibility objects?
 
 This depends on if you have `typing_extensions` installed. For the most part if you have it installed then you shouldn't need to use these. These also only affect older Python versions. Below is the list of when you may need to use these objects.
 
 
-### `typing_extensions` is installed:
+#### `typing_extensions` is installed:
 
-#### Python 3.5.0
+ - <3.5.0> `Protocol_`
 
- - `Protocol_`
+#### `typing_extensions` isn't installed:
 
-### `typing_extensions` isn't installed:
-
-#### Python 2.x or 3.x
-
- - `Protocol_`
- - `NewType_`
-
-#### Python 3.5.0 - 3.5.2:
-
- - `ClassVar_`
- - `Type_`
+ - <2.x & 3.x> `Protocol_`
+ - <2.x & 3.x> `NewType_`
+ - <3.5.[0-2]> `ClassVar_`
+ - <3.5.[0-1]> `Type_`

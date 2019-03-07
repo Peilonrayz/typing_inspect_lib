@@ -248,9 +248,7 @@ class CollectionTestCase(BaseTestCase):
         self.class_test(typing.Deque, typing.Deque, collections.deque, None, [TValue], [int])
 
     def test_dict(self):
-        dict_ = _abc.MutableMapping if PY35 and (VERSION <= (3, 5, 1)) else dict
-
-        self.class_test(typing.Dict, typing.Dict, dict_, None, [TKey, TValue], [int, str], fn=eq)
+        self.class_test(typing.Dict, typing.Dict, dict, None, [TKey, TValue], [int, str], fn=eq)
 
     @skipIf((PY35 and VERSION <= (3, 5, 1)),
             'DefaultDict not in 3.5.[0,1]')
@@ -258,19 +256,13 @@ class CollectionTestCase(BaseTestCase):
         self.class_test(typing.DefaultDict, typing.DefaultDict, collections.defaultdict, None, [TKey, TValue], [int, str], fn=eq)
 
     def test_list(self):
-        list_ = _abc.MutableSequence if PY35 and (VERSION <= (3, 5, 1)) else list
-
-        self.class_test(typing.List, typing.List, list_, None, [TValue], [int])
+        self.class_test(typing.List, typing.List, list, None, [TValue], [int])
 
     def test_set(self):
-        set_ = _abc.MutableSet if PY35 and (VERSION <= (3, 5, 1)) else set
-
-        self.class_test(typing.Set, typing.Set, set_, None, [TValue], [int])
+        self.class_test(typing.Set, typing.Set, set, None, [TValue], [int])
 
     def test_frozen_set(self):
-        frozenset_ = _abc.Set if PY35 and (VERSION <= (3, 5, 1)) else frozenset
-
-        self.class_test(typing.FrozenSet, typing.FrozenSet, frozenset_, None, [TValue], [int])
+        self.class_test(typing.FrozenSet, typing.FrozenSet, frozenset, None, [TValue], [int])
 
     def test_named_tuple(self):
         TestTuple = typing.NamedTuple('TestTuple', [('key', TKey), ('value', TValue)])
