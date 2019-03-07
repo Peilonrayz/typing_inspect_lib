@@ -1,6 +1,6 @@
 # Typing Inspect Lib
 
-[![Build Status](https://travis-ci.org/Peilonrayz/typing_inspect_lib.svg)](https://travis-ci.org/Peilonrayz/typing_inspect_lib)
+[![Build Status](https://travis-ci.org/Peilonrayz/typing_inspect_lib.svg?branch=master)](https://travis-ci.org/Peilonrayz/typing_inspect_lib)
 
 Allows type inspections for the `typing` and `typing_extensions` library.
 

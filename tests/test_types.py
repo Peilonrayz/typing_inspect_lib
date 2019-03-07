@@ -64,10 +64,13 @@ class BaseTestCase(TestCase):
 
             if special:
                 t = typing_inspect_lib.Type(typing_, class_, args)
-                self.assertTrue(is_ is typing_inspect_lib.get_special_type(obj))
+                if is_ is typing_inspect_lib.ClassVar_:
+                    self.assertTrue(is_ is typing_inspect_lib.get_special_type(obj))
+                else:
+                    self.assertEqual(is_, typing_inspect_lib.get_special_type(obj))
             else:
                 t = typing_inspect_lib.Type(base, base, args)
-                self.assertTrue(None is typing_inspect_lib.get_special_type(obj))
+                self.assertEqual(None, typing_inspect_lib.get_special_type(obj))
             self.assertEqual(t, typing_inspect_lib.build_types(obj))
 
 
