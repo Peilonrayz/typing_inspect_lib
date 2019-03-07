@@ -45,7 +45,7 @@ else:
     ProtocolMeta = typing_extensions._ProtocolMeta
 
 
-if (_PY35 and _VERSION < (3, 5, 4)) or (_PY36 and _VERSION < (3, 6, 1)):
+if (_PY35 and _VERSION <= (3, 5, 3)) or (_PY36 and _VERSION <= (3, 6, 1)):
     if _HAS_TE:
         NoReturn = typing_extensions.NoReturn
     else:

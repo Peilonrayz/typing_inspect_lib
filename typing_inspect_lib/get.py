@@ -189,7 +189,7 @@ else:
     _CLASS_LOC = '__origin__'
 
 
-if _PY35 and _VERSION <= (3, 5, 0):
+if _PY35 and _VERSION <= (3, 5, 1):
     def _get_generic_class(type_):
         if _is_builtin(type_):
             return getattr(type_, _CLASS_LOC, None)

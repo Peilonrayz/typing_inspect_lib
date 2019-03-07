@@ -76,4 +76,4 @@ AsyncGenerator = getattr(_collections, 'AsyncGenerator', None)
 
 # contextlib ABC
 AbstractContextManager = getattr(contextlib, 'AbstractContextManager', getattr(typing, 'ContextManager', None))
-AbstractAsyncContextManager = getattr(contextlib, 'AbstractAsyncContextManager', None)
+AbstractAsyncContextManager = getattr(contextlib, 'AbstractAsyncContextManager', getattr(typing, 'AsyncContextManager', None))

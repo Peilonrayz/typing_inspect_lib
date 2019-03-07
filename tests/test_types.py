@@ -235,9 +235,9 @@ class ABCTestCase(BaseTestCase):
         self.type_test(typing.Collection[TValue], typing.Collection, _abc.Collection, [TValue], _is)
 
     @skipIf(
-        VERSION < (3, 5, 4)
+        VERSION < (3, 5, 5)
         or (PY36 and VERSION <= (3, 6, 0)),
-        'AsyncGenerator requires Python 3.5.4 and not in 3.6.[0,?]')
+        'AsyncGenerator requires Python 3.5.5 and not in 3.6.[0,?]')
     def test_async_generator(self):
         _is = 0b00000000000
         self.type_test(typing.AsyncGenerator, typing.AsyncGenerator, _abc.AsyncGenerator, None, _is)
