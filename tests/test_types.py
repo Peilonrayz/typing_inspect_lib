@@ -234,10 +234,7 @@ class ABCTestCase(BaseTestCase):
         self.type_test(typing.Collection, typing.Collection, _abc.Collection, None, _is)
         self.type_test(typing.Collection[TValue], typing.Collection, _abc.Collection, [TValue], _is)
 
-    @skipIf(
-        VERSION < (3, 5, 5)
-        or (PY36 and VERSION <= (3, 6, 0)),
-        'AsyncGenerator requires Python 3.5.5 and not in 3.6.[0,?]')
+    @skipIf(VERSION < (3, 6, 1), 'AsyncGenerator requires Python 3.6.1')
     def test_async_generator(self):
         _is = 0b00000000000
         self.type_test(typing.AsyncGenerator, typing.AsyncGenerator, _abc.AsyncGenerator, None, _is)
@@ -245,8 +242,8 @@ class ABCTestCase(BaseTestCase):
 
     @skipIf(
         VERSION < (3, 5, 4)
-        or (PY36 and VERSION <= (3, 6, 0)),
-        'AsyncContextManager requires Python 3.5.4 and not in 3.6.[0,?]')
+        or (PY36 and VERSION <= (3, 6, 1)),
+        'AsyncContextManager requires Python 3.5.4 and not in 3.6.[0,1]')
     def test_async_context_manager(self):
         _is = 0b00000000000
         self.type_test(typing.AsyncContextManager, typing.AsyncContextManager, _abc.AbstractAsyncContextManager, None, _is)
@@ -373,8 +370,8 @@ class OneOffTestCase(BaseTestCase):
         self.assertEqual(typing_inspect_lib.build_types(TestType), typing_inspect_lib.NewType(TestType))
 
     @skipIf((PY35 and VERSION <= (3, 5, 3))
-            or (PY36 and VERSION <= (3, 6, 0)),
-            'NoReturn not in 3.5.[0,3] or 3.6.[0,?]')
+            or (PY36 and VERSION <= (3, 6, 1)),
+            'NoReturn not in 3.5.[0,3] or 3.6.[0,1]')
     def test_no_return(self):
         self.assertEqual(typing_inspect_lib.build_types(typing.NoReturn), typing_inspect_lib.LiteralType(typing.NoReturn))
 
