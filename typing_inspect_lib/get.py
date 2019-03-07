@@ -2,6 +2,10 @@ import collections
 import sys
 import types
 import typing
+try:
+    import typing_extensions
+except ImportError:
+    pass
 
 from ._compat import typing_, abc
 
@@ -150,7 +154,9 @@ def _is_builtin(type_):
     if module is None or name is None:
         return None
     if module in {'typing', 'typing_extensions'}:
-        return True
+        t = getattr(globals()[module], name, None)
+        if t is not None:
+            return t == _get_wrapped_typing(type_)
     return False
 
 
@@ -219,14 +225,16 @@ _CLASS_TYPES = {
 }
 
 
-def _convert_special_type(type_):
-    return _CLASS_TYPES.get(type_, type_)
+def _convert_special_type(special_type, type_):
+    if special_type is typing_.Protocol:
+        return type_
+    return _CLASS_TYPES.get(special_type, special_type)
 
 
 def _get_typing(type_):
     special_type = get_special_type(type_)
     if special_type is not None:
-        return special_type, _convert_special_type(special_type)
+        return special_type, _convert_special_type(special_type, type_)
 
     generic_type, base = get_generic_type(type_)
     if generic_type is not None:

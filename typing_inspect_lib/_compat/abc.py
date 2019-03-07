@@ -3,6 +3,12 @@ import collections
 import sys
 import types
 import typing
+try:
+    import typing_extensions
+except ImportError:
+    _HAS_TE = False
+else:
+    _HAS_TE = True
 
 _VERSION = sys.version_info[:3]
 
@@ -75,5 +81,12 @@ Reversible = getattr(_collections, 'Reversible', typing.Reversible)
 AsyncGenerator = getattr(_collections, 'AsyncGenerator', None)
 
 # contextlib ABC
-AbstractContextManager = getattr(contextlib, 'AbstractContextManager', getattr(typing, 'ContextManager', None))
-AbstractAsyncContextManager = getattr(contextlib, 'AbstractAsyncContextManager', getattr(typing, 'AsyncContextManager', None))
+if _HAS_TE:
+    _ContextManager = getattr(typing_extensions, 'ContextManager', None)
+    _AsyncContextManager = getattr(typing_extensions, 'AsyncContextManager', None)
+else:
+    _ContextManager = getattr(typing, 'ContextManager', None)
+    _AsyncContextManager = getattr(typing, 'AsyncContextManager', None)
+
+AbstractContextManager = getattr(contextlib, 'AbstractContextManager', _ContextManager)
+AbstractAsyncContextManager = getattr(contextlib, 'AbstractAsyncContextManager', _AsyncContextManager)

@@ -52,11 +52,12 @@ Exposes four public functions:
 3. `get_args` which returns the arguments stored in the type provided.
 
     ```python
-    from typing import Mapping
+    from typing import Mapping, Union
     from typing_inspect_lib import get_args
     
     assert get_args(Mapping) == ()
     assert get_args(Mapping[str, int]) == (str, int)
+    assert get_args(Mapping[Union[str, int], int]) == (Union[str, int], int)
      ```
 
 4. (WIP) `build_types` which builds the type object in, soon to be, easy to use classes.

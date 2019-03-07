@@ -14,6 +14,10 @@ __all__ = [
 
 _VERSION = sys.version_info[:3]
 
+_SPECIAL_TYPES = {
+    typing_.ClassVar
+}
+
 
 class Type:
     def __init__(self, typing_, class_, args=None):
@@ -31,12 +35,18 @@ class Type:
     def __eq__(self, other):
         if not isinstance(other, Type):
             return False
-        if not (self.typing is other.typing):
-            return False
-        return all([
-            self.class_ == other.class_,
-            self.args == other.args
-        ])
+        if self.typing in _SPECIAL_TYPES:
+            if self.typing is not other.typing:
+                return False
+            if self.class_ is not other.class_:
+                return False
+        else:
+            if self.typing != other.typing:
+                print('typing', self.typing, other.typing)
+                return False
+            if self.class_ != other.class_:
+                return False
+        return self.args == other.args
 
     def __repr__(self):
         args = None if all(t.typing is typing.Any for t in self.args) else self.args

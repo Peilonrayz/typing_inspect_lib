@@ -50,6 +50,10 @@ def _build_type(type_, tuples, before, after):
         class Test(obj):
             pass
 
+        # Name mangle so debugging is easier.
+        Test.__module__ = type_.__module__
+        Test.__qualname__ = 'BT<{}>'.format(getattr(type_, '__name__', getattr(type_, '_name', '')))
+
         base = obj = Test
         for t in tuples[before:]:
             obj = obj[t]

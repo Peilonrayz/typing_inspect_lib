@@ -27,6 +27,7 @@ class SpecialTestCase(TestCase):
     def test_get_args(self):
         self.assertEqual((), get_args(Mapping))
         self.assertEqual((str, int), get_args(Mapping[str, int]))
+        self.assertEqual((Union[str, int], int), get_args(Mapping[Union[str, int], int]))
 
     def test_build_types(self):
         type_ = build_types(Mapping[Union[str, int], int])
