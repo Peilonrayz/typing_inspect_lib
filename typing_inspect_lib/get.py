@@ -14,6 +14,7 @@ __all__ = [
     'get_generic_type',
     'get_parameters',
     'get_special_type',
+    'get_type_var_info',
     'get_typing',
 ]
 
@@ -332,6 +333,39 @@ def _args_to_parameters(args):
     return tuple(a for a in args if get_special_type(a) is typing.TypeVar)
 
 
-def get_parameters(type_):
-    parameters = getattr(type_, '__parameters__', None)
-    return parameters if parameters is not None else ()
+if _PY350_2:
+    _USE_ARGS = {
+        typing_.ClassVar,
+        typing.Callable,
+        typing.Union,
+        typing.Tuple
+    }
+
+    def get_parameters(type_):
+        if get_special_type(type_) in _USE_ARGS:
+            parameters = get_args(type_)
+        else:
+            parameters = getattr(type_, '__parameters__', None) or ()
+        return tuple(p for p in parameters if isinstance(p, typing.TypeVar))
+elif _PY_OLD:
+    def get_parameters(type_):
+        if get_special_type(type_) is typing_.ClassVar:
+            return get_args(type_)
+        return getattr(type_, '__parameters__', None) or ()
+else:
+    def get_parameters(type_):
+        return getattr(type_, '__parameters__', None) or ()
+
+
+_TypeVarInfo = collections.namedtuple('TypeVarInfo', ['name', 'bound', 'covariant', 'contravariant'])
+
+
+def get_type_var_info(tv):
+    if not isinstance(tv, typing.TypeVar):
+        raise TypeError('get_type_var_info must be passed a TypeVar')
+    return _TypeVarInfo(
+        getattr(tv, '__name__', None),
+        getattr(tv, '__bound__', None),
+        getattr(tv, '__covariant__', None),
+        getattr(tv, '__contravariant__', None)
+    )

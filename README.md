@@ -4,76 +4,123 @@
 
 Allows type inspections for the `typing` and `typing_extensions` library.
 
-Exposes four public functions:
+## API
 
-1. `get_special_type` which returns the 'special type' of the type passed to it:
+### `get_special_type`
 
-    - `typing.Callable`
-    - `typing.ClassVar`
-    - `typing.Generic`
-    - `typing.NamedTuple`
-    - `typing.NewType`
-    - `typing.Optional`
-    - `typing.Tuple`
-    - `typing.Type`
-    - `typing.TypeVar`
-    - `typing.Union`
-    - `typing_extensions.Protocol`
-    - `None`
-    
-    Allowing for the following usage:
-    
-    ```python
-    from typing import Generic, Union
-    from typing_inspect_lib import get_special_type
-    
-    assert get_special_type(Generic) is Generic
-    assert get_special_type(Union[Generic, str]) is Union
-    ```
-    
-2. `get_typing` which returns the typing and the class instance of the type passed to it. Not just for special types.
+This returns the 'special type' of the type passed. These special types are:
 
-    ```python
-    from typing import Mapping, Union
-    import collections.abc
-    
-    from typing_inspect_lib import get_typing
-    
-    typing_, class_ = get_typing(Mapping[str, int])
-    assert typing_ is Mapping
-    assert class_ is collections.abc.Mapping
-    
-    # Not all types have custom classes
-    typing_, class_ = get_typing(Union[str, int])
-    assert typing_ is Union
-    assert class_ is Union
-    ```
+- `typing.Callable`
+- `typing.ClassVar`
+- `typing.Generic`
+- `typing.NamedTuple`
+- `typing.NewType`
+- `typing.Optional`
+- `typing.Tuple`
+- `typing.Type`
+- `typing.TypeVar`
+- `typing.Union`
+- `typing_extensions.Protocol`
+- `None`
 
-3. `get_args` which returns the arguments stored in the type provided.
+Allowing for the following usage:
 
-    ```python
-    from typing import Mapping, Union
-    from typing_inspect_lib import get_args
-    
-    assert get_args(Mapping) == ()
-    assert get_args(Mapping[str, int]) == (str, int)
-    assert get_args(Mapping[Union[str, int], int]) == (Union[str, int], int)
-     ```
+```python
+from typing import Generic, Union
+from typing_inspect_lib import get_special_type
 
-4. (WIP) `build_types` which builds the type object in, soon to be, easy to use classes.
+assert get_special_type(Generic) is Generic
+assert get_special_type(Union[Generic, str]) is Union
+```
 
-    ```python
-    from typing import Mapping, Union
-    import collections.abc
-    
-    from typing_inspect_lib import build_types
-    
-    type_ = build_types(Mapping[Union[str, int], int])
-    assert type_.typing is Mapping
-    assert type_.class_ is collections.abc.Mapping
-    assert type_.args[0].typing is Union
-    assert type_.args[0].args[0].typing is str
-     ```
+
+### `get_typing`
+
+This returns the typing and the class of the type passed to it. This works on both special types and generic types.
+
+```python
+from typing import Mapping, Union
+import collections.abc
+
+from typing_inspect_lib import get_typing
+
+typing_, class_ = get_typing(Mapping[str, int])
+assert typing_ is Mapping
+assert class_ is collections.abc.Mapping
+
+# Not all types have custom classes
+typing_, class_ = get_typing(Union[str, int])
+assert typing_ is Union
+assert class_ is Union
+```
+
+### `get_args`
+
+This returns the arguments stored in the type provided.
+
+```python
+from typing import Mapping, Union
+from typing_inspect_lib import get_args
+
+assert get_args(Mapping) == ()
+assert get_args(Mapping[str, int]) == (str, int)
+assert get_args(Mapping[Union[str, int], int]) == (Union[str, int], int)
+```
+
+### `get_parameters`
+
+This returns the parameters stored in the type provided.
+
+```python
+from typing import Mapping, TypeVar
+from typing_inspect_lib import get_parameters
+
+TKey = TypeVar('TKey')
+TValue = TypeVar('TValue')
+
+assert get_parameters(Mapping[str, int]) == ()
+assert get_parameters(Mapping[TKey, TValue]) == (TKey, TValue)
+```
+
+### `get_type_var_info`
+
+This returns the parameters stored in the type provided.
+
+```python
+from typing import Mapping, TypeVar
+from typing_inspect_lib import get_parameters, get_type_var_info
+
+TExample = TypeVar('TExample', bound=int)
+t_example = get_type_var_info(TExample)
+
+assert t_example == ('TExample', int, False, False)
+assert t_example.name == 'TExample'
+assert t_example.bound == int
+assert not t_example.covariant
+assert not t_example.contravariant
+
+# Using this with typing objects
+assert get_parameters(Mapping) != ()
+mapping_parameters = tuple(get_type_var_info(p) for p in get_parameters(Mapping))
+assert (('KT', None, False, False), ('VT_co', None, True, False)) == mapping_parameters
+```
+
+### (WIP) `build_types`
+
+This builds the type object in, soon to be, easy to use classes.
+
+```python
+from typing import Mapping, Union
+import collections.abc
+
+from typing_inspect_lib import build_types
+
+type_ = build_types(Mapping[Union[str, int], int])
+assert type_.typing is Mapping
+assert type_.class_ is collections.abc.Mapping
+assert type_.args[0].typing is Union
+assert type_.args[0].args[0].typing is str
+```
 
 # Python compatibility
 

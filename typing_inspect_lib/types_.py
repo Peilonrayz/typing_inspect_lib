@@ -20,17 +20,11 @@ _SPECIAL_TYPES = {
 
 
 class Type:
-    def __init__(self, typing_, class_, args=None):
-        if args is None:
-            try:
-                parameters = len(typing_.__parameters__)
-            except (AttributeError, TypeError):
-                parameters = 0
-            args = tuple([LiteralType(typing.Any)] * parameters)
+    def __init__(self, typing_, class_, args, parameters=None):
         self.typing = typing_
         self.class_ = class_
         self.args = tuple(args)
-        self._parameters = get._args_to_parameters(args)
+        self.parameters = tuple(parameters) if parameters else ()
 
     def __eq__(self, other):
         if not isinstance(other, Type):
@@ -45,11 +39,10 @@ class Type:
                 return False
             if self.class_ != other.class_:
                 return False
-        return self.args == other.args
+        return self.args == other.args and self.parameters == other.parameters
 
     def __repr__(self):
-        args = None if all(t.typing is typing.Any for t in self.args) else self.args
-        return 'Type({self.typing}, {self.class_}, args={args})'.format(self=self, args=args)
+        return 'Type({self.typing}, {self.class_}, args={args}, parameters={parameters})'.format(self=self, args=self.args, parameters=self.parameters)
 
     def __str__(self):
         args = ''
@@ -63,15 +56,25 @@ class Type:
 class VarType:
     def __init__(self, type_):
         self.typing = type_
+        tv = get.get_type_var_info(type_)
+        self.name = tv.name
+        self.bound = tv.bound
+        self.covariant = tv.covariant
+        self.contravariant = tv.contravariant
 
     def __eq__(self, other):
+        if not isinstance(other, VarType):
+            return False
         return all([
-            isinstance(other, VarType),
-            self.typing == other.typing
+            self.name == other.name,
+            self.bound == other.bound,
+            self.covariant == other.covariant,
+            self.contravariant == other.contravariant
         ])
 
     def __repr__(self):
-        return str(self.typing)
+        return 'VT<{}>'.format(self.typing)
+        # return 'VT<{} {} {} {}>'.format(self.name, self.bound, self.covariant, self.contravariant)
 
 
 _LITERALS = {
@@ -125,6 +128,5 @@ def build_types(type_):
         return VarType(type_)
     t_typing, class_ = get.get_typing(type_)
     args = tuple(build_types(a) for a in get.get_args(type_))
-    if not args:
-        args = None
-    return Type(t_typing, class_, args)
+    parameters = tuple(build_types(p) for p in get.get_parameters(type_))
+    return Type(t_typing, class_, args, parameters)
