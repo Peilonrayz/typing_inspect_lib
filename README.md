@@ -1,6 +1,6 @@
 # Typing Inspect Lib
 
-[![Build Status](https://travis-ci.org/Peilonrayz/typing_inspect_lib.svg)](https://travis-ci.org/Peilonrayz/typing_inspect_lib)
+[![Build Status](https://travis-ci.org/Peilonrayz/typing_inspect_lib.svg?branch=master)](https://travis-ci.org/Peilonrayz/typing_inspect_lib)
 
 Allows type inspections for the `typing` and `typing_extensions` library.
 
@@ -52,11 +52,12 @@ Exposes four public functions:
 3. `get_args` which returns the arguments stored in the type provided.
 
     ```python
-    from typing import Mapping
+    from typing import Mapping, Union
     from typing_inspect_lib import get_args
     
     assert get_args(Mapping) == ()
     assert get_args(Mapping[str, int]) == (str, int)
+    assert get_args(Mapping[Union[str, int], int]) == (Union[str, int], int)
      ```
 
 4. (WIP) `build_types` which builds the type object in, soon to be, easy to use classes.
@@ -75,6 +76,12 @@ Exposes four public functions:
      ```
 
 # Python compatibility
+
+## Incompatibilities between versions
+
+- <3.5.[0-1]> Passing `get_args(typing_extensions.Counter[T])` returns `(T, int)` rather than `(T,)`.
+
+## Compatibility objects
 
 Help! I'm using Python 3.5.1 and 3.6 and don't have access to `typing.ClassVar` in 3.5.1. What do I do?  
 There are two ways to fix this:
@@ -108,25 +115,18 @@ There are two ways to fix this:
     assert get_special_type(ClassVar_[int]) is ClassVar_ # Error in 3.5.1
     ```
 
-## When should I use these compatibility objects?
+### When should I use these compatibility objects?
 
 This depends on if you have `typing_extensions` installed. For the most part if you have it installed then you shouldn't need to use these. These also only affect older Python versions. Below is the list of when you may need to use these objects.
 
 
-### `typing_extensions` is installed:
+#### `typing_extensions` is installed:
 
-#### Python 3.5.0
+ - <3.5.0> `Protocol_`
 
- - `Protocol_`
+#### `typing_extensions` isn't installed:
 
-### `typing_extensions` isn't installed:
-
-#### Python 2.x or 3.x
-
- - `Protocol_`
- - `NewType_`
-
-#### Python 3.5.0 - 3.5.2:
-
- - `ClassVar_`
- - `Type_`
+ - <2.x & 3.x> `Protocol_`
+ - <2.x & 3.x> `NewType_`
+ - <3.5.[0-2]> `ClassVar_`
+ - <3.5.[0-1]> `Type_`

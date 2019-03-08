@@ -57,14 +57,19 @@ if _PY35 and _VERSION <= (3, 5, 2):
     if _HAS_TE:
         ClassVar = typing_extensions.ClassVar
         ClassVarMeta = typing_extensions._ClassVarMeta
-        Type = typing_extensions.Type
     else:
         ClassVar = _gen_type('ClassVar')()
         ClassVarMeta = _gen_type('ClassVarMeta')
-        Type = _gen_type('Type')()
 else:
     ClassVar = typing.ClassVar
     ClassVarMeta = _gen_type('ClassVarMeta')
+
+if _PY35 and _VERSION <= (3, 5, 1):
+    if _HAS_TE:
+        Type = typing_extensions.Type
+    else:
+        Type = _gen_type('Type')()
+else:
     Type = typing.Type
 
 if _PY35 and _VERSION <= (3, 5, 2):
