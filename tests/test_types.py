@@ -20,7 +20,12 @@ try:
     from typing import CT_co
 except ImportError:
     CT_co = typing.TypeVar('CT_co', bound=type, covariant=True)
-CT = typing.TypeVar('CT', bound=type)
+
+try:
+    from typing import CT
+except ImportError:
+    CT = typing.TypeVar('CT_co', bound=type, covariant=True)
+
 
 TKey = typing.TypeVar('TKey')
 TValue = typing.TypeVar('TValue')

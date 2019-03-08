@@ -128,9 +128,10 @@ assert type_.args[0].args[0].typing is str
 
 - <3.5.[0-1]> Passing `get_args(typing_extensions.Counter[T])` returns `(T, int)` rather than `(T,)`.
 - Some parameters change between versions:
-    - <3.5.2> Type is `CT` rather than `CT_co`.
-    - <3.5.[0-1]> ItemsView is `T_co, KT, VT_co` rather than `KT, VT_co`.
-    - <3.5.[0-1]> Coroutine is `V_co, T_co, T_contra` rather than `T_co, T_contra, T_co`.
+    - <3.5.2> `typing.Type` is named `CT` rather than `CT_co`. (It is still covariant and bound to `type`)  
+       FIX: `typing_extensions.Type` works fine.
+    - <3.5.[0-1]> `typing.ItemsView` is `T_co, KT, VT_co` rather than `KT, VT_co`.
+    - <3.5.[0-1]> `typing_extensions.Coroutine` is `V_co, T_co, T_contra` rather than `T_co, T_contra, T_co`.
 
 ## Compatibility objects
 
