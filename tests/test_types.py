@@ -20,6 +20,7 @@ try:
     from typing import CT_co
 except ImportError:
     CT_co = typing.TypeVar('CT_co', bound=type, covariant=True)
+CT = typing.TypeVar('CT', bound=type)
 
 TKey = typing.TypeVar('TKey')
 TValue = typing.TypeVar('TValue')
@@ -120,7 +121,8 @@ class SpecialTestCase(BaseTestCase):
     @skipIf(PY35 and VERSION <= (3, 5, 1),
             'Type not in 3.5.[0,1]')
     def test_type(self):
-        self.class_test(typing.Type, typing.Type, type, typing.Type, [TValue], [int], [CT_co])
+        parameters = [CT] if PY35 and VERSION <= (3, 5, 2) else [CT_co]
+        self.class_test(typing.Type, typing.Type, type, typing.Type, [TValue], [int], parameters)
 
     def test_type_var(self):
         self.assertEqual(typing_inspect_lib.build_types(TKey), typing_inspect_lib.VarType(TKey))
