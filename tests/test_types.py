@@ -292,7 +292,7 @@ class CollectionTestCase(BaseTestCase):
         TestTuple = typing.NamedTuple('TestTuple', [('key', TKey), ('value', TValue)])
 
         self.class_test(typing.NamedTuple, typing.NamedTuple, typing.NamedTuple, typing.NamedTuple)
-        self.class_test(TestTuple, None, None, None)
+        self.assertEqual(None, typing_inspect_lib.build_types(TestTuple))
 
     @skipIf(VERSION < (3, 7, 2), 'OrderedDict requires Python 3.7.2')
     def test_ordered_dict(self):

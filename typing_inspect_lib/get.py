@@ -2,6 +2,7 @@ import collections
 import sys
 import types
 import typing
+import itertools
 try:
     import typing_extensions
 except ImportError:
@@ -9,13 +10,18 @@ except ImportError:
 
 from ._compat import typing_, abc
 
+
 __all__ = [
     'get_args',
+    'get_bases',
     'get_generic_type',
     'get_parameters',
     'get_special_type',
+    'get_type_info',
     'get_type_var_info',
     'get_typing',
+    'get_mro',
+    'get_mro_orig'
 ]
 
 _VERSION = sys.version_info[:3]
@@ -58,11 +64,17 @@ if _VERSION >= (3, 7, 0):
     _WRAPPED_SPECIAL_TYPES[type] = typing.Type
 
 
-def _get_safe(dict_, key):
+def pairwise(it):
+    a, b = itertools.tee(it)
+    next(b, None)
+    return zip(a, b)
+
+
+def _get_safe(dict_, key, default=None):
     try:
-        return dict_.get(key)
+        return dict_.get(key, default)
     except TypeError:
-        return None
+        return default
 
 
 def _get_special_uni(type_):
@@ -161,8 +173,11 @@ else:
 
 if _PY_OLD:
     def _get_other_typing(type_):
-        if type_ in _TYPING_LITERAL:
-            return type_
+        try:
+            if type_ in _TYPING_LITERAL:
+                return type_
+        except TypeError:
+            pass
         return None
 else:
     def _get_other_typing(type_):
@@ -213,7 +228,7 @@ def _is_type_alias(type_):
 def _get_origins(type_):
     origins = [type_]
     if hasattr(type_, '__origin__'):
-        while type_.__origin__ is not None:
+        while getattr(type_, '__origin__', None) is not None:
             type_ = type_.__origin__
             origins.append(type_)
     return origins
@@ -247,11 +262,24 @@ def _get_typing(type_):
 
 
 def get_typing(type_):
+    if isinstance(type_, typing.TypeVar):
+        return typing.TypeVar, type_
+
+    try:
+        is_literal = type_ in _LITERALS
+    except TypeError:
+        pass
+    else:
+        if is_literal:
+            return type_, type_
+
     t, c = _get_typing(type_)
     if t is None:
         t = c
     if c is None:
         c = t
+    if t is typing_.NewType:
+        c = type_
     return t, c
 
 
@@ -289,20 +317,27 @@ elif _PY_OLD:
         return None
 
 
+def _safe_getattr_tuple(type_, key):
+    try:
+        return tuple(getattr(type_, key, None) or [])
+    except TypeError:
+        return ()
+
+
 if _PY35 and _VERSION <= (3, 5, 1):
     def _handle_origin(type_):
         if getattr(type_, '__origin__', None) is not None:
-            return getattr(type_, '__parameters__', None) or ()
+            return _safe_getattr_tuple(type_, '__parameters__')
         return None
 elif _PY_OLD:
     def _handle_origin(type_):
         origins = _get_origins(type_)
         origin, origins = origins[0], origins[1:]
-        args = list(getattr(origin, '__args__', None) or [])
+        args = list(_safe_getattr_tuple(origin, '__args__'))
         for origin_ in origins:
-            links = _parameters_link(args, origin.__parameters__)
+            links = _parameters_link(args, _safe_getattr_tuple(origin, '__parameters__'))
             origin = origin_
-            for link, arg in zip(links, getattr(origin, '__args__', None) or []):
+            for link, arg in zip(links, _safe_getattr_tuple(origin, '__args__')):
                 args[link] = arg
         return tuple(args)
 
@@ -351,10 +386,10 @@ elif _PY_OLD:
     def get_parameters(type_):
         if get_special_type(type_) is typing_.ClassVar:
             return get_args(type_)
-        return getattr(type_, '__parameters__', None) or ()
+        return _safe_getattr_tuple(type_, '__parameters__')
 else:
     def get_parameters(type_):
-        return getattr(type_, '__parameters__', None) or ()
+        return _safe_getattr_tuple(type_, '__parameters__')
 
 
 _TypeVarInfo = collections.namedtuple('TypeVarInfo', ['name', 'bound', 'covariant', 'contravariant'])
@@ -369,3 +404,289 @@ def get_type_var_info(tv):
         getattr(tv, '__covariant__', None),
         getattr(tv, '__contravariant__', None)
     )
+
+
+_LITERALS = {
+    typing.Any,
+    str,
+    type(None),
+    bytes,
+    int,
+    typing_.NoReturn
+}
+
+if _VERSION < (3, 0, 0):
+    _LITERALS.add(unicode)
+
+
+_TypeInfo = collections.namedtuple('TypeInfo', ['typing', 'class_', 'args', 'parameters'])
+
+
+def get_type_info(type_):
+    t_typing, class_ = get_typing(type_)
+    if t_typing is None and class_ is None:
+        return None
+    args = tuple(a for a in get_args(type_))
+    parameters = tuple(p for p in get_parameters(type_))
+    return _TypeInfo(t_typing, class_, args, parameters)
+
+
+def _builtin_objects():
+    builtins = [typing]
+    try:
+        typing_extensions
+    except NameError:
+        pass
+    else:
+        builtins.append(typing_extensions)
+
+    for builtin in builtins:
+        for k, v in builtin.__dict__.items():
+            yield k, v
+
+
+_BuiltinTypeLinks = collections.namedtuple('BuiltinTypeLinks', ['typing', 'class_'])
+
+
+def _build_builtin_links():
+    types = []
+    for key, obj in _builtin_objects():
+        t = get_type_info(obj)
+        if t is not None:
+            types.append(t)
+
+    return _BuiltinTypeLinks(
+        {t.typing: t for t in types},
+        {t.class_: t for t in types},
+    )
+
+
+_BUILTIN_LINKS = _build_builtin_links()
+
+_FROM_TYPING = {k: v.class_ for k, v in _BUILTIN_LINKS.typing.items()}
+_FROM_CLASS = {k: v.typing for k, v in _BUILTIN_LINKS.class_.items()}
+
+
+def _build_builtin_graph(builtins):
+    graph = {k: v for k, v in builtins.class_.items()}
+    for key, type_ in graph.items():
+        bases = _get_bases_default(type_.class_)
+        g_bases = tuple(graph.get(t, t) for _, t in bases)
+        setattr(type_, '__bases', g_bases)
+    return graph
+
+
+def _get_mro_conv_dedupe(mro):
+    collection_mro = iter(
+        _FROM_TYPING.get(obj, obj)
+        for obj in reversed(mro)
+    )
+    mro = ()
+    mro_set = set()
+    for obj in collection_mro:
+        if obj not in mro_set:
+            mro_set.add(obj)
+            mro += obj,
+    return tuple(reversed(mro))
+
+
+def _from_types(types, index=1):
+    mro = ()
+    for type_ in types:
+        t = get_typing(type_)[index]
+        mro += type_ if t is None else t,
+    return mro
+
+
+if _PY35 and _VERSION <= (3, 5, 0):
+    def _get_mro(type_):
+        return _get_mro_conv_dedupe(_from_types(_safe_getattr_tuple(type_, '__mro__')))
+elif _PY_OLD:
+    def _get_mro(type_):
+        return _get_mro_conv_dedupe(_safe_getattr_tuple(type_, '__mro__'))
+else:
+    def _get_mro(type_):
+        return _safe_getattr_tuple(type_, '__mro__')
+
+
+def get_mro(type_):
+    type_ = _FROM_TYPING.get(type_, type_)
+    if type_ not in _BUILTIN_LINKS.class_:
+        _, type_ = get_typing(type_)
+    return _get_mro(type_)
+
+
+_BaseObj = collections.namedtuple('BaseObj', ['typing', 'class_', 'orig'])
+
+
+def _get_bases_typing(type_):
+    typings = _safe_getattr_tuple(type_, '__bases__')
+    if not typings:
+        return None
+    return tuple(
+        (
+            typing_,
+            _FROM_TYPING.get(typing_, typing_),
+        )
+        for typing_ in typings
+    )
+
+
+def _get_bases_class(type_):
+    classes = _safe_getattr_tuple(type_, '__bases__')
+    if not classes:
+        return None
+    return tuple(
+        (
+            _FROM_CLASS.get(class_, class_),
+            class_,
+        )
+        for class_ in classes
+    )
+
+
+if _PY35 and _VERSION <= (3, 5, 0):
+    def _get_bases_default(type_):
+        bases = _bases(type_)
+        if bases is None:
+            return None
+        return tuple((i.typing, i.class_) for i in bases)
+elif _PY_OLD:
+    def _get_bases_default(type_):
+        if type_ in _BUILTIN_LINKS.class_:
+            return _get_bases_class(type_)
+        else:
+            return _get_bases_typing(type_)
+else:
+    def _get_bases_default(type_):
+        return _get_bases_class(type_)
+
+
+if _PY35 and _VERSION <= (3, 5, 0):
+    def _bases(type_):
+        type_ = _FROM_CLASS.get(type_, type_)
+        origins = _safe_getattr_tuple(type_, '__bases__')
+        if not origins:
+            return None
+        mro = ()
+        for orig in origins:
+            t = get_type_info(orig)
+            if t is None:
+                raise ValueError('{}, {}'.format(t, type_))
+            mro += _BaseObj(
+                t.typing,
+                t.class_,
+                orig if len(t.args) > len(t.parameters) else None
+            ),
+        return mro
+else:
+    def _bases(type_):
+        base_defaults = _get_bases_default(type_)
+        if base_defaults is None:
+            return ()
+
+        orig_bases = {}
+        for base in _safe_getattr_tuple(type_, '__orig_bases__'):
+            _, class_ = get_typing(base)
+            orig_bases.setdefault(class_, []).append(base)
+
+        orig_bases = {k: iter(v) for k, v in orig_bases.items()}
+
+        sentinel = object()
+        bases = ()
+        for typing_, class_ in base_defaults:
+            if class_ not in orig_bases:
+                bases += _BaseObj(typing_, class_, None),
+                continue
+            b = next(orig_bases[class_], sentinel)
+            if b is sentinel:
+                del orig_bases[class_]
+                bases += _BaseObj(typing_, class_, None),
+            else:
+                bases += _BaseObj(typing_, class_, b),
+
+        left_over = [i for lst in orig_bases.values() for i in lst]
+        if left_over:
+            print(base_defaults, orig_bases)
+            raise ValueError('Did not consume all orig_bases for the class provided. {}'.format(left_over))
+        return bases
+
+
+def get_bases(type_):
+    t = get_type_info(type_)
+    if t is None:
+        return _bases(type_)
+    if not t.args or t.class_ not in _BUILTIN_LINKS.class_:
+        return _bases(t.class_)
+    bases = ()
+    for base in _bases(t.class_):
+        if base.class_ not in _BUILTIN_LINKS.class_:
+            bases += base,
+        else:
+            p = get_parameters(base.typing)
+            if p:
+                bases += _BaseObj(base.typing, base.class_, base.typing[t.args[:len(p)]]),
+            else:
+                bases += base,
+    return bases
+
+
+def _get_parents(type_):
+    parents = ()
+    for base in get_bases(type_):
+        parents += base,
+        b = base.class_ if base.orig is None else base.orig
+        parents += _get_parents(b)
+    return parents
+
+
+def get_parents(type_):
+    t = get_type_info(type_)
+    if t is None:
+        typing_, class_, orig = _FROM_CLASS.get(type_, type_), _FROM_TYPING.get(type_, type_), None
+    else:
+        typing_, class_ = t.typing, t.class_
+        orig = type_ if t.args else None
+    return (_BaseObj(typing_, class_, orig),) + _get_parents(type_)
+
+
+def _inner_set(values):
+    vs = zip(*values)
+    return [set(v) for v in vs]
+
+
+def get_mro_orig(type_):
+    parents = {}
+    for parent in get_parents(type_):
+        parents.setdefault(parent.class_, []).append(parent)
+
+    mro = ()
+    for class_ in get_mro(type_):
+        if class_ not in parents:
+            mro += _BaseObj(_FROM_CLASS.get(class_, class_), class_, None),
+            continue
+
+        classes = parents.pop(class_)
+        if not all(a.typing is b.typing for a, b in pairwise(classes)):
+            raise ValueError('MRO has two different types using the same class')
+
+        if all(c.orig is None for c in classes):
+            mro += classes[0],
+            continue
+
+        args = _inner_set(get_args(c.orig) if c.orig is not None else {} for c in classes)
+        new_args = ()
+        for arg in args:
+            if not args:
+                raise ValueError('One argument is empty')
+            if len(arg) == 1:
+                new_args += arg.pop(),
+            else:
+                new_args += typing.Union[tuple(arg)],
+        c = classes[0]
+        mro += _BaseObj(c.typing, c.class_, c.typing[new_args]),
+
+    if parents:
+        raise ValueError("Didn't consume all parents")
+
+    return mro
