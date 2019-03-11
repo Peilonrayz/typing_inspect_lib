@@ -1,13 +1,13 @@
-import collections
-import sys
-import types
 import typing
+import types
+import collections
 import itertools
 try:
     import typing_extensions
 except ImportError:
     pass
 
+from .links import VERSION, PY_35, PY_OLD
 from ._compat import typing_, abc
 
 
@@ -24,10 +24,21 @@ __all__ = [
     'get_mro_orig'
 ]
 
-_VERSION = sys.version_info[:3]
-_PY35 = _VERSION[:2] == (3, 5)
-_PY350_2 = (3, 5, 0) <= _VERSION <= (3, 5, 2)
-_PY_OLD = _VERSION < (3, 7, 0)
+# Origin code
+
+
+def _get_origins(type_):
+    origins = [type_]
+    if hasattr(type_, '__origin__'):
+        while getattr(type_, '__origin__', None) is not None:
+            type_ = type_.__origin__
+            origins.append(type_)
+    return origins
+
+
+# Get typing code
+
+_PY350_2 = (3, 5, 0) <= VERSION <= (3, 5, 2)
 
 # Non-generic literal types that should be returned by `get_class` and `get_typing`
 _TYPING_LITERAL = {
@@ -47,27 +58,37 @@ _SPECIAL_TYPES = {
     typing_.Type: typing_.Type
 }
 
-if _VERSION != (3, 5, 0):
+if VERSION != (3, 5, 0):
     _SPECIAL_TYPES[typing_.Protocol] = typing_.Protocol
 
 _WRAPPED_SPECIAL_TYPES = {
-    (typing.CallableMeta if _PY_OLD else collections.abc.Callable): typing.Callable,
+    (typing.CallableMeta if PY_OLD else collections.abc.Callable): typing.Callable,
     (typing_.ClassVarMeta if _PY350_2 else typing_._ClassVar): typing_.ClassVar,
     # (GenericMeta if PY350_2 else Generic): Generic,
     typing.Generic: typing.Generic,
     (typing.OptionalMeta if _PY350_2 else typing.Optional): typing.Optional,
-    (typing.TupleMeta if _PY_OLD else tuple): typing.Tuple,
+    (typing.TupleMeta if PY_OLD else tuple): typing.Tuple,
     (typing.UnionMeta if _PY350_2 else typing_._Union): typing.Union,
 }
 
-if _VERSION >= (3, 7, 0):
+if VERSION >= (3, 7, 0):
     _WRAPPED_SPECIAL_TYPES[type] = typing.Type
 
+_LITERALS = {
+    typing.Any,
+    str,
+    type(None),
+    bytes,
+    int,
+    typing_.NoReturn
+}
 
-def pairwise(it):
-    a, b = itertools.tee(it)
-    next(b, None)
-    return zip(a, b)
+if VERSION < (3, 0, 0):
+    _LITERALS.add(unicode)
+
+
+def _args_to_parameters(args):
+    return tuple(a for a in args if get_special_type(a) is typing.TypeVar)
 
 
 def _get_safe(dict_, key, default=None):
@@ -87,7 +108,7 @@ def _get_special_uni(type_):
     return None
 
 
-if _PY_OLD:
+if PY_OLD:
     def get_special_type(type_):
         base_type = _get_safe(_SPECIAL_TYPES, type_)
         if base_type is not None:
@@ -115,44 +136,7 @@ else:
         return _get_special_uni(type_)
 
 
-if _PY_OLD:
-    def get_generic_type(type_):
-        ret_type = None
-        if isinstance(type_, typing._ProtocolMeta):
-            ret_type = typing_.BaseProtocol
-        elif isinstance(type_, typing_.ProtocolMeta):
-            ret_type = typing_.Protocol
-        elif isinstance(type_, typing.GenericMeta):
-            ret_type = typing.Generic
-
-        if ret_type is not None:
-            if type_.__origin__ is None:
-                return ret_type, True
-            else:
-                return ret_type, False
-        return None, False
-else:
-    def get_generic_type(type_):
-        if isinstance(type_, typing._ProtocolMeta):
-            return typing_.BaseProtocol, True
-        if isinstance(type_, typing_.ProtocolMeta):
-            return typing_.Protocol, True
-
-        if isinstance(type_, typing._GenericAlias):
-            if isinstance(type_.__origin__, typing._ProtocolMeta):
-                return typing_.BaseProtocol, False
-            elif isinstance(type_.__origin__, typing_.ProtocolMeta):
-                return typing_.Protocol, False
-            elif getattr(type_, '_special', False):
-                return typing.Generic, True
-            else:
-                return typing.Generic, False
-        if hasattr(type_, '__orig_bases__') and typing.Generic in type_.__mro__:
-            return typing.Generic, True
-        return None, False
-
-
-if _PY_OLD:
+if PY_OLD:
     def _get_wrapped_typing(type_):
         gorg = getattr(type_, '_gorg', None)
         if gorg is not None:
@@ -171,7 +155,7 @@ else:
         return getattr(typing, _CONV_NAMES.get(name, name), None)
 
 
-if _PY_OLD:
+if PY_OLD:
     def _get_other_typing(type_):
         try:
             if type_ in _TYPING_LITERAL:
@@ -184,7 +168,7 @@ else:
         return None
 
 
-if _PY_OLD:
+if PY_OLD:
     _CLASS_LOC = '__extra__'
 else:
     _CLASS_LOC = '__origin__'
@@ -210,7 +194,7 @@ _OLD_CLASS = {
 }
 
 
-if _PY35 and _VERSION <= (3, 5, 1):
+if PY_35 and VERSION <= (3, 5, 1):
     def _get_generic_class(type_, typing_):
         if _is_builtin(typing_):
             t = getattr(type_, _CLASS_LOC, None)
@@ -219,19 +203,6 @@ if _PY35 and _VERSION <= (3, 5, 1):
 else:
     def _get_generic_class(type_, typing_):
         return getattr(type_, _CLASS_LOC, None)
-
-
-def _is_type_alias(type_):
-    return type(type_) is typing._TypeAlias
-
-
-def _get_origins(type_):
-    origins = [type_]
-    if hasattr(type_, '__origin__'):
-        while getattr(type_, '__origin__', None) is not None:
-            type_ = type_.__origin__
-            origins.append(type_)
-    return origins
 
 
 _CLASS_TYPES = {
@@ -283,15 +254,53 @@ def get_typing(type_):
     return t, c
 
 
-def _parameters_link(args, parameters):
-    args_ = {}
-    for i, a in enumerate(args):
-        args_.setdefault(a, []).append(i)
-    args_ = {k: iter(v) for k, v in args_.items()}
-    return [next(args_.get(p, iter([p]))) for p in parameters]
+# Get generic type code
 
 
-if _PY35 and _VERSION <= (3, 5, 2):
+if PY_OLD:
+    def get_generic_type(type_):
+        ret_type = None
+        if isinstance(type_, typing._ProtocolMeta):
+            ret_type = typing_.BaseProtocol
+        elif isinstance(type_, typing_.ProtocolMeta):
+            ret_type = typing_.Protocol
+        elif isinstance(type_, typing.GenericMeta):
+            ret_type = typing.Generic
+
+        if ret_type is not None:
+            if type_.__origin__ is None:
+                return ret_type, True
+            else:
+                return ret_type, False
+        return None, False
+else:
+    def get_generic_type(type_):
+        if isinstance(type_, typing._ProtocolMeta):
+            return typing_.BaseProtocol, True
+        if isinstance(type_, typing_.ProtocolMeta):
+            return typing_.Protocol, True
+
+        if isinstance(type_, typing._GenericAlias):
+            if isinstance(type_.__origin__, typing._ProtocolMeta):
+                return typing_.BaseProtocol, False
+            elif isinstance(type_.__origin__, typing_.ProtocolMeta):
+                return typing_.Protocol, False
+            elif getattr(type_, '_special', False):
+                return typing.Generic, True
+            else:
+                return typing.Generic, False
+        if hasattr(type_, '__orig_bases__') and typing.Generic in type_.__mro__:
+            return typing.Generic, True
+        return None, False
+
+
+# Get args code
+
+def _is_type_alias(type_):
+    return type(type_) is typing._TypeAlias
+
+
+if PY_35 and VERSION <= (3, 5, 2):
     def _handle_special_type(type_):
         special_type = get_special_type(type_)
         if special_type is not None:
@@ -310,7 +319,7 @@ if _PY35 and _VERSION <= (3, 5, 2):
             if special_type is typing.Tuple:
                 return type_.__tuple_params__ or ()
         return None
-elif _PY_OLD:
+elif PY_OLD:
     def _handle_special_type(type_):
         if get_special_type(type_) is typing.ClassVar:
             return (type_.__type__,) if type_.__type__ is not None else ()
@@ -324,12 +333,20 @@ def _safe_getattr_tuple(type_, key):
         return ()
 
 
-if _PY35 and _VERSION <= (3, 5, 1):
+def _parameters_link(args, parameters):
+    args_ = {}
+    for i, a in enumerate(args):
+        args_.setdefault(a, []).append(i)
+    args_ = {k: iter(v) for k, v in args_.items()}
+    return [next(args_.get(p, iter([p]))) for p in parameters]
+
+
+if PY_35 and VERSION <= (3, 5, 1):
     def _handle_origin(type_):
         if getattr(type_, '__origin__', None) is not None:
             return _safe_getattr_tuple(type_, '__parameters__')
         return None
-elif _PY_OLD:
+elif PY_OLD:
     def _handle_origin(type_):
         origins = _get_origins(type_)
         origin, origins = origins[0], origins[1:]
@@ -342,7 +359,7 @@ elif _PY_OLD:
         return tuple(args)
 
 
-if _PY_OLD:
+if PY_OLD:
     def get_args(type_):
         if _is_type_alias(type_):
             return type_.type_var,
@@ -364,11 +381,10 @@ else:
         return getattr(type_, '__args__', None) or ()
 
 
-def _args_to_parameters(args):
-    return tuple(a for a in args if get_special_type(a) is typing.TypeVar)
+# Get parameters code
 
 
-if _PY350_2:
+if PY_35 and VERSION < (3, 5, 2):
     _USE_ARGS = {
         typing_.ClassVar,
         typing.Callable,
@@ -382,7 +398,7 @@ if _PY350_2:
         else:
             parameters = getattr(type_, '__parameters__', None) or ()
         return tuple(p for p in parameters if isinstance(p, typing.TypeVar))
-elif _PY_OLD:
+elif PY_OLD:
     def get_parameters(type_):
         if get_special_type(type_) is typing_.ClassVar:
             return get_args(type_)
@@ -390,6 +406,24 @@ elif _PY_OLD:
 else:
     def get_parameters(type_):
         return _safe_getattr_tuple(type_, '__parameters__')
+
+
+# Type info code
+
+
+_TypeInfo = collections.namedtuple('TypeInfo', ['typing', 'class_', 'args', 'parameters'])
+
+
+def get_type_info(type_):
+    t_typing, class_ = get_typing(type_)
+    if t_typing is None and class_ is None:
+        return None
+    args = tuple(a for a in get_args(type_))
+    parameters = tuple(p for p in get_parameters(type_))
+    return _TypeInfo(t_typing, class_, args, parameters)
+
+
+# TypeVar info code
 
 
 _TypeVarInfo = collections.namedtuple('TypeVarInfo', ['name', 'bound', 'covariant', 'contravariant'])
@@ -405,30 +439,13 @@ def get_type_var_info(tv):
         getattr(tv, '__contravariant__', None)
     )
 
-
-_LITERALS = {
-    typing.Any,
-    str,
-    type(None),
-    bytes,
-    int,
-    typing_.NoReturn
-}
-
-if _VERSION < (3, 0, 0):
-    _LITERALS.add(unicode)
+# MRO code
 
 
-_TypeInfo = collections.namedtuple('TypeInfo', ['typing', 'class_', 'args', 'parameters'])
-
-
-def get_type_info(type_):
-    t_typing, class_ = get_typing(type_)
-    if t_typing is None and class_ is None:
-        return None
-    args = tuple(a for a in get_args(type_))
-    parameters = tuple(p for p in get_parameters(type_))
-    return _TypeInfo(t_typing, class_, args, parameters)
+def pairwise(it):
+    a, b = itertools.tee(it)
+    next(b, None)
+    return zip(a, b)
 
 
 def _builtin_objects():
@@ -498,10 +515,10 @@ def _from_types(types, index=1):
     return mro
 
 
-if _PY35 and _VERSION <= (3, 5, 0):
+if PY_35 and VERSION <= (3, 5, 0):
     def _get_mro(type_):
         return _get_mro_conv_dedupe(_from_types(_safe_getattr_tuple(type_, '__mro__')))
-elif _PY_OLD:
+elif PY_OLD:
     def _get_mro(type_):
         return _get_mro_conv_dedupe(_safe_getattr_tuple(type_, '__mro__'))
 else:
@@ -545,13 +562,13 @@ def _get_bases_class(type_):
     )
 
 
-if _PY35 and _VERSION <= (3, 5, 0):
+if PY_35 and VERSION <= (3, 5, 0):
     def _get_bases_default(type_):
         bases = _bases(type_)
         if bases is None:
             return None
         return tuple((i.typing, i.class_) for i in bases)
-elif _PY_OLD:
+elif PY_OLD:
     def _get_bases_default(type_):
         if type_ in _BUILTIN_LINKS.class_:
             return _get_bases_class(type_)
@@ -562,7 +579,7 @@ else:
         return _get_bases_class(type_)
 
 
-if _PY35 and _VERSION <= (3, 5, 0):
+if PY_35 and VERSION <= (3, 5, 0):
     def _bases(type_):
         type_ = _FROM_CLASS.get(type_, type_)
         origins = _safe_getattr_tuple(type_, '__bases__')
