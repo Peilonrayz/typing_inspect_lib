@@ -1,7 +1,7 @@
 import sys
 import typing
-import itertools
 
+from .links import LITERAL_TYPES
 from . import get
 from ._compat import typing_
 
@@ -130,7 +130,7 @@ def build_types_info(t):
     if t.typing is typing.TypeVar:
         return VarType(t.class_)
 
-    if t.typing in get._LITERALS:
+    if t.typing in LITERAL_TYPES:
         return LiteralType(t.typing)
 
     if t.typing is typing_.NewType:

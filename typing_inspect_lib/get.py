@@ -7,8 +7,8 @@ try:
 except ImportError:
     pass
 
-from .links import VERSION, PY_35, PY_OLD
-from ._compat import typing_, abc
+from .links import VERSION, PY_35, PY_OLD, LITERAL_TYPES, CLASS_TYPES, TYPING_TYPES, TYPING_TO_CLASS, CLASS_TO_TYPING, SP_CLASS_TYPES_WRAPPED, SP_TYPING_TYPES
+from ._compat import typing_
 
 
 __all__ = [
@@ -36,222 +36,78 @@ def _get_origins(type_):
     return origins
 
 
+def _get_last_origin(type_):
+    if hasattr(type_, '_gorg'):
+        return type_._gorg
+
+    origins = _get_origins(type_)
+    if len(origins) > 1:
+        return origins[-1]
+    return None
+
+
 # Get typing code
 
-_PY350_2 = (3, 5, 0) <= VERSION <= (3, 5, 2)
+if PY_OLD:
+    def _get_typing(type_):
+        origin = _get_last_origin(type_)
+        if origin is not None:
+            return origin, TYPING_TO_CLASS[origin] or origin
 
-# Non-generic literal types that should be returned by `get_class` and `get_typing`
-_TYPING_LITERAL = {
-    typing.Hashable,
-    typing.Sized
-}
+        if isinstance(type_, typing.GenericMeta):
+            return type_, type_
+        return None
+else:
+    def _get_typing(type_):
+        origin = getattr(type_, '__origin__', None)
+        if origin is not None:
+            return CLASS_TO_TYPING[origin] or origin, origin
 
-# Types used to get the special type.
-_SPECIAL_TYPES = {
-    typing.Callable: typing.Callable,
-    typing_._ClassVar: typing_.ClassVar,
-    typing.Generic: typing.Generic,
-    typing.NamedTuple: typing.NamedTuple,
-    typing.Optional: typing.Optional,
-    typing.Tuple: typing.Tuple,
-    typing_._Union: typing.Union,
-    typing_.Type: typing_.Type
-}
-
-if VERSION != (3, 5, 0):
-    _SPECIAL_TYPES[typing_.Protocol] = typing_.Protocol
-
-_WRAPPED_SPECIAL_TYPES = {
-    (typing.CallableMeta if PY_OLD else collections.abc.Callable): typing.Callable,
-    (typing_.ClassVarMeta if _PY350_2 else typing_._ClassVar): typing_.ClassVar,
-    # (GenericMeta if PY350_2 else Generic): Generic,
-    typing.Generic: typing.Generic,
-    (typing.OptionalMeta if _PY350_2 else typing.Optional): typing.Optional,
-    (typing.TupleMeta if PY_OLD else tuple): typing.Tuple,
-    (typing.UnionMeta if _PY350_2 else typing_._Union): typing.Union,
-}
-
-if VERSION >= (3, 7, 0):
-    _WRAPPED_SPECIAL_TYPES[type] = typing.Type
-
-_LITERALS = {
-    typing.Any,
-    str,
-    type(None),
-    bytes,
-    int,
-    typing_.NoReturn
-}
-
-if VERSION < (3, 0, 0):
-    _LITERALS.add(unicode)
+        if hasattr(type_, '__orig_bases__'):
+            return type_, type_
+        return None
 
 
-def _args_to_parameters(args):
-    return tuple(a for a in args if get_special_type(a) is typing.TypeVar)
-
-
-def _get_safe(dict_, key, default=None):
-    try:
-        return dict_.get(key, default)
-    except TypeError:
-        return default
-
-
-def _get_special_uni(type_):
+def _get_special_typing_universal(type_):
     if isinstance(type_, typing.TypeVar):
-        return typing.TypeVar
+        return typing.TypeVar, type_
     if isinstance(type_, typing_.ProtocolMeta):
-        return typing_.Protocol
+        return typing_.Protocol, type_
     if isinstance(type_, types.FunctionType) and hasattr(type_, '__supertype__'):
-        return typing_.NewType
+        return typing_.NewType, type_
     return None
 
 
 if PY_OLD:
-    def get_special_type(type_):
-        base_type = _get_safe(_SPECIAL_TYPES, type_)
-        if base_type is not None:
-            return base_type
-        t = type(type_)
-        unwrapped = _get_safe(_WRAPPED_SPECIAL_TYPES, t)
-        if unwrapped is not None:
-            return unwrapped
-        if t is typing.GenericMeta:
-            # To allow <type>[T] to return correctly
-            if getattr(type_, '__origin__', None) is typing.Generic:
-                return typing.Generic
-            if getattr(type_, '__origin__', None) is typing_.Type:
-                return typing_.Type
-        return _get_special_uni(type_)
+    def _get_special_typing(type_):
+        return SP_CLASS_TYPES_WRAPPED[type(type_)]
 else:
-    def get_special_type(type_):
-        base_type = _get_safe(_SPECIAL_TYPES, type_)
-        if base_type is not None:
-            return base_type
-        if isinstance(type_, typing._GenericAlias):
-            unwrapped = _get_safe(_WRAPPED_SPECIAL_TYPES, type_.__origin__)
-            if unwrapped is not None:
-                return unwrapped
-        return _get_special_uni(type_)
-
-
-if PY_OLD:
-    def _get_wrapped_typing(type_):
-        gorg = getattr(type_, '_gorg', None)
-        if gorg is not None:
-            return gorg
-        return _get_origins(type_)[-1]
-else:
-    _CONV_NAMES = {
-        'AbstractAsyncContextManager': 'AsyncContextManager',
-        'AbstractContextManager': 'ContextManager'
-    }
-
-    def _get_wrapped_typing(type_):
-        name = type_._name
-        if name is None:
-            return getattr(type_, '__origin__', None)
-        return getattr(typing, _CONV_NAMES.get(name, name), None)
-
-
-if PY_OLD:
-    def _get_other_typing(type_):
-        try:
-            if type_ in _TYPING_LITERAL:
-                return type_
-        except TypeError:
-            pass
+    def _get_special_typing(type_):
         return None
-else:
-    def _get_other_typing(type_):
-        return None
-
-
-if PY_OLD:
-    _CLASS_LOC = '__extra__'
-else:
-    _CLASS_LOC = '__origin__'
-
-
-def _is_builtin(type_):
-    module = getattr(type_, '__module__', None)
-    name = getattr(type_, '__name__', None)
-    if module is None or name is None:
-        return None
-    if module in {'typing', 'typing_extensions'}:
-        t = getattr(globals()[module], name, None)
-        if t is not None:
-            return t == type_
-    return False
-
-
-_OLD_CLASS = {
-    (typing.Dict, abc.MutableMapping): dict,
-    (typing.List, abc.MutableSequence): list,
-    (typing.Set, abc.MutableSet): set,
-    (typing.FrozenSet, abc.Set): frozenset
-}
-
-
-if PY_35 and VERSION <= (3, 5, 1):
-    def _get_generic_class(type_, typing_):
-        if _is_builtin(typing_):
-            t = getattr(type_, _CLASS_LOC, None)
-            return _OLD_CLASS.get((typing_, t), t)
-        return None
-else:
-    def _get_generic_class(type_, typing_):
-        return getattr(type_, _CLASS_LOC, None)
-
-
-_CLASS_TYPES = {
-    typing.Callable: abc.Callable,
-    typing.Tuple: tuple,
-    typing_.Type: type,
-}
-
-
-def _convert_special_type(special_type, type_):
-    if special_type is typing_.Protocol:
-        return type_
-    return _CLASS_TYPES.get(special_type, special_type)
-
-
-def _get_typing(type_):
-    special_type = get_special_type(type_)
-    if special_type is not None:
-        return special_type, _convert_special_type(special_type, type_)
-
-    generic_type, base = get_generic_type(type_)
-    if generic_type is not None:
-        typing_ = type_
-        if not base:
-            typing_ = _get_wrapped_typing(type_)
-        return typing_, _get_generic_class(type_, typing_)
-    return _get_other_typing(type_), None
 
 
 def get_typing(type_):
-    if isinstance(type_, typing.TypeVar):
-        return typing.TypeVar, type_
-
-    try:
-        is_literal = type_ in _LITERALS
-    except TypeError:
-        pass
-    else:
-        if is_literal:
-            return type_, type_
-
-    t, c = _get_typing(type_)
-    if t is None:
-        t = c
-    if c is None:
-        c = t
+    ret = (
+            _get_special_typing_universal(type_)
+            or LITERAL_TYPES[type_]
+            or CLASS_TYPES[type_]
+            or TYPING_TYPES[type_]
+            or _get_typing(type_)
+            or _get_special_typing(type_)
+    )
+    if ret is None:
+        return None, None
+    t, c = ret
     if t is typing_.NewType:
         c = type_
     return t, c
+
+
+def get_special_type(type_):
+    t_typing = get_typing(type_)[0]
+    if t_typing in SP_TYPING_TYPES:
+        return t_typing
+    return None
 
 
 # Get generic type code

@@ -142,6 +142,7 @@ LITERAL_TYPES = _literal_to_link_types(
         bytes,
         type(None),
     ]
+    + ([unicode] if VERSION < (3, 0, 0) else [])
     + _read_globals([
         'typing.Any',
         'typing.AnyStr',
