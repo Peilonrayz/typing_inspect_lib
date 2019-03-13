@@ -92,7 +92,7 @@ _OLD_CLASS = {
 }
 
 
-if PY_35 and VERSION <= (3, 5, 1):
+if PY_35 and VERSION <= (3, 5, 2):
     def _from_typing_to_class(t_typing):
         t_class = getattr(t_typing, '__extra__', None) or t_typing
         return _OLD_CLASS.get((t_typing, t_class), t_class)
