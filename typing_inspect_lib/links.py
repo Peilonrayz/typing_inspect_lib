@@ -282,7 +282,7 @@ _SPECIAL_OBJECTS_WRAPPED = _read_globals([
     SP_TYPING_TO_CLASS_WRAPPED
 ) = _typing_to_link_types(_add_typing_class(_SPECIAL_OBJECTS_WRAPPED))
 
-_PY350_2 = PY_35 and VERSION < (3, 5, 2)
+_PY350_2 = PY_35 and VERSION <= (3, 5, 2)
 
 _add_keys_to_link_types(
     [
