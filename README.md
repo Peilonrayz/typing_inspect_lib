@@ -6,37 +6,21 @@ Allows type inspections for the `typing` and `typing_extensions` library.
 
 ## API
 
-### `get_special_type`
+Currently I support the following functions:
 
-This returns the 'special type' of the type passed. These special types are:
-
-- `typing.Callable`
-- `typing.ClassVar`
-- `typing.Generic`
-- `typing.NamedTuple`
-- `typing.NewType`
-- `typing.Optional`
-- `typing.Tuple`
-- `typing.Type`
-- `typing.TypeVar`
-- `typing.Union`
-- `typing_extensions.Protocol`
-- `None`
-
-Allowing for the following usage:
-
-```python
-from typing import Generic, Union
-from typing_inspect_lib import get_special_type
-
-assert get_special_type(Generic) is Generic
-assert get_special_type(Union[Generic, str]) is Union
-```
-
+- `get_typing`
+- `get_args`
+- `get_parameters`
+- `get_type_info`
+- `get_type_var_info`
+- `get_bases`
+- `get_mro`
+- `get_mro_orig`
+- (WIP) `build_types`
 
 ### `get_typing`
 
-This returns the typing and the class of the type passed to it. This works on both special types and generic types.
+This returns the typing type and the class type of the type passed to it.
 
 ```python
 from typing import Mapping, Union
@@ -82,6 +66,25 @@ assert get_parameters(Mapping[str, int]) == ()
 assert get_parameters(Mapping[TKey, TValue]) == (TKey, TValue)
 ```
 
+### `get_type_info`
+
+This returns all the type information for a type.
+
+```python
+from typing import Mapping, TypeVar
+from typing_inspect_lib import get_type_info
+import collections
+
+TKey = TypeVar('TKey')
+type_ = get_type_info(Mapping[TKey, int])
+
+assert type_ == (Mapping, collections.abc.Mapping, (int,), (TKey,))
+assert type_.typing == Mapping
+assert type_.class_ == collections.abc.Mapping
+assert type_.args == (int,)
+assert type_.parameters == (TKey,)
+```
+
 ### `get_type_var_info`
 
 This returns the parameters stored in the type provided.
@@ -103,6 +106,50 @@ assert not t_example.contravariant
 assert get_parameters(Mapping) != ()
 mapping_parameters = tuple(get_type_var_info(p) for p in get_parameters(Mapping))
 assert (('KT', None, False, False), ('VT_co', None, True, False)) == mapping_parameters
+```
+
+### `get_bases`
+
+Gets the bases of the type, returns the typing type, class type and orig type.
+
+This returns different values in different versions of Python. The below is Python 3.7.
+
+```python
+from typing import Mapping, Collection
+from collections import abc
+
+from typing_inspect_lib import get_bases
+
+assert get_bases(Mapping) == ((Collection, abc.Collection, None),)
+assert get_bases(abc.Mapping) == ((Collection, abc.Collection, None),)
+assert get_bases(Mapping[int, int]) == ((Collection, abc.Collection, typing.Collection[int]),)
+```
+
+### `get_mro`
+
+Gets the mro of the type. Returning them as class types.
+
+Builtin types are converted to their class type to get the MRO and so `Generic` may be missing.
+
+This returns different values in different versions of Python. The below is Python 3.7.
+
+```python
+from typing import Mapping
+from collections import abc
+
+from typing_inspect_lib import get_mro
+
+mro = (
+    abc.Mapping,
+    abc.Collection,
+    abc.Sized,
+    abc.Iterable,
+    abc.Container,
+    object
+)
+assert get_mro(Mapping) == mro
+assert get_mro(abc.Mapping) == mro
+assert get_mro(Mapping[int, str]) == mro
 ```
 
 ### (WIP) `build_types`
@@ -128,10 +175,14 @@ assert type_.args[0].args[0].typing is str
 
 - <3.5.[0-1]> Passing `get_args(typing_extensions.Counter[T])` returns `(T, int)` rather than `(T,)`.
 - Some parameters change between versions:
-    - <3.5.2> `typing.Type` is named `CT` rather than `CT_co`. (It is still covariant and bound to `type`)  
+    - <3.5.2> `typing.Type` is `CT`, rather than `CT_co`. (It is still covariant and bound to `type`)  
        FIX: `typing_extensions.Type` works fine.
     - <3.5.[0-1]> `typing.ItemsView` is `T_co, KT, VT_co` rather than `KT, VT_co`.
     - <3.5.[0-1]> `typing_extensions.Coroutine` is `V_co, T_co, T_contra` rather than `T_co, T_contra, T_co`.
+- Due to changes in `collections.abc` the following functions return different results in different Python versions:
+    - `get_bases`
+    - `get_mro`
+    - `get_mro_orig`
 
 ## Compatibility objects
 
@@ -181,4 +232,3 @@ This depends on if you have `typing_extensions` installed. For the most part if 
  - <2.x & 3.x> `Protocol_`
  - <2.x & 3.x> `NewType_`
  - <3.5.[0-2]> `ClassVar_`
- - <3.5.[0-1]> `Type_`

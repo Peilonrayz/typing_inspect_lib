@@ -1,23 +1,19 @@
 from unittest import TestCase, skipIf
 
 import sys
-from typing import Generic, Union, Mapping, TypeVar, Sequence, Sized, Iterable, Container
+from typing import Generic, Union, Mapping, TypeVar, Sequence, Sized, Iterable, Container, Reversible
 import typing
 try:
     import collections.abc as abc
 except ImportError:
     import collections as abc
 
-from typing_inspect_lib import get_special_type, get_typing, get_args, build_types, get_parameters, get_type_var_info, get_mro, get_bases, get_mro_orig
+from typing_inspect_lib import get_typing, get_args, build_types, get_parameters, get_type_var_info, get_mro, get_bases, get_mro_orig
 
 VERSION = sys.version_info[:3]
 
 
 class SpecialTestCase(TestCase):
-    def test_get_special_type(self):
-        self.assertEqual(Generic, get_special_type(Generic))
-        self.assertEqual(Union, get_special_type(Union))
-
     def test_get_typing(self):
         typing_, class_ = get_typing(Mapping[str, int])
         self.assertEqual(Mapping, typing_)
@@ -156,7 +152,6 @@ class SpecialTestCase(TestCase):
 
         self.assertEqual(bases, get_mro(T))
 
-    @skipIf(True, 'Not working')
     def test_mro_orig(self):
         if VERSION < (3, 6, 0):
             mro = (
@@ -182,33 +177,43 @@ class SpecialTestCase(TestCase):
         self.assertEqual(get_mro_orig(Mapping[int, str]), mro)
 
     def test_mro_orig_custom(self):
-        return
         class T(Mapping[int, str], Sequence[str]):
             pass
 
-        if VERSION < (3, 6, 0):
+        if VERSION < (3, 5, 0):
             bases = (
-                T,
-                abc.Mapping,
-                abc.Sequence,
-                abc.Sized,
-                abc.Iterable,
-                abc.Container,
-                Generic,
-                object
+                (T, T, None),
+                (Mapping, abc.Mapping, Mapping[int, str]),
+                (Sequence, abc.Sequence, Sequence[str]),
+                (Sized, abc.Sized, None),
+                (Iterable, abc.Iterable, Iterable[Union[int, str]]),
+                (Container, abc.Container, Container[Union[int, str]]),
+                (Generic, Generic, None),
+                (object, object, None)
+            )
+        elif VERSION < (3, 6, 0):
+            bases = (
+                (T, T, None),
+                (Mapping, abc.Mapping, Mapping[int, str]),
+                (Sequence, abc.Sequence, Sequence[str]),
+                (Sized, abc.Sized, None),
+                (Iterable, abc.Iterable, Iterable[Union[str, int]]),
+                (Container, abc.Container, Container[Union[str, int]]),
+                (Generic, Generic, None),
+                (object, object, None)
             )
         else:
             bases = (
-                T,
-                abc.Mapping,
-                abc.Sequence,
-                abc.Reversible,
-                abc.Collection,
-                abc.Sized,
-                abc.Iterable,
-                abc.Container,
-                Generic,
-                object
+                (T, T, None),
+                (Mapping, abc.Mapping, Mapping[int, str]),
+                (Sequence, abc.Sequence, Sequence[str]),
+                (Reversible, abc.Reversible, Reversible[str]),
+                (typing.Collection, abc.Collection, typing.Collection[Union[str, int]]),
+                (Sized, abc.Sized, None),
+                (Iterable, abc.Iterable, Iterable[Union[str, int]]),
+                (Container, abc.Container, Container[Union[str, int]]),
+                (Generic, Generic, None),
+                (object, object, None)
             )
 
         self.assertEqual(bases, get_mro_orig(T))
