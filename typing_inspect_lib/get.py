@@ -284,7 +284,7 @@ def get_args(type_):
 # Get parameters code
 
 
-if PY_35 and VERSION < (3, 5, 2):
+if PY_35 and VERSION <= (3, 5, 2):
     _USE_ARGS = {
         typing_.ClassVar,
         typing.Callable,
