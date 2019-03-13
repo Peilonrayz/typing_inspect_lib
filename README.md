@@ -2,11 +2,24 @@
 
 [![Build Status](https://travis-ci.org/Peilonrayz/typing_inspect_lib.svg?branch=master)](https://travis-ci.org/Peilonrayz/typing_inspect_lib)
 
-Allows type inspections for the `typing` and `typing_extensions` library.
+Allows type inspections for the `typing` and `typing_extensions` libraries. Works in Python 2.7 and 3 - Python 3.5.0+ is supported.
+
+This library is designed to ease use in all Python versions, and so functions like `get_typing` return multiple types.
+The rational for this comes in three parts:
+
+1. Different versions of Python change what types they hold. Take `__origin__`, which changed from returning typing types (e.g. `typing.Mapping`) to class types (e.g. `collections.abc.Mapping`) in Python 3.7.  
+    Meaning the function `get_origin` would have version incompatibilities between 3.7 and other versions of Python.
+2. Different versions of Python contain different information. Take `__extra__`, which was removed in Python 3.7.  
+    Meaning there isn't an easy way to get the typing type from a `get_origin` function in Python 3.7. And the result from a `get_extra` function is always `None`.
+3. Internally converting to and from typing and class types is easy. Meaning there's little overhead to returning all the available types.
+
+And so your code can focus on using the type information you need, rather than having to check version incompatibilities.
+Whilst the library is designed to reduce version incompatibility it doesn't guarantee that there is none.
+Please look at [Python compatibility](#python-compatibility) to see which are known.
 
 ## API
 
-Currently I support the following functions:
+Currently the following functions are supported:
 
 - `get_typing`
 - `get_args`
@@ -87,7 +100,7 @@ assert type_.parameters == (TKey,)
 
 ### `get_type_var_info`
 
-This returns the parameters stored in the type provided.
+This returns all the information stored in the TypeVar provided.
 
 ```python
 from typing import Mapping, TypeVar
@@ -102,7 +115,7 @@ assert t_example.bound == int
 assert not t_example.covariant
 assert not t_example.contravariant
 
-# Using this with typing objects
+# Using this with unwrapped typing types
 assert get_parameters(Mapping) != ()
 mapping_parameters = tuple(get_type_var_info(p) for p in get_parameters(Mapping))
 assert (('KT', None, False, False), ('VT_co', None, True, False)) == mapping_parameters
@@ -122,7 +135,7 @@ from typing_inspect_lib import get_bases
 
 assert get_bases(Mapping) == ((Collection, abc.Collection, None),)
 assert get_bases(abc.Mapping) == ((Collection, abc.Collection, None),)
-assert get_bases(Mapping[int, int]) == ((Collection, abc.Collection, typing.Collection[int]),)
+assert get_bases(Mapping[int, int]) == ((Collection, abc.Collection, Collection[int]),)
 ```
 
 ### `get_mro`
@@ -197,11 +210,11 @@ There are two ways to fix this:
     from typing import Union
     from typing_extensions import ClassVar
     
-    from typing_inspect_lib import get_special_type
+    from typing_inspect_lib import get_type_info
     
-    assert get_special_type(Union) is not ClassVar
-    assert get_special_type(ClassVar) is ClassVar
-    assert get_special_type(ClassVar[int]) is ClassVar
+    assert get_type_info(Union).typing is not ClassVar
+    assert get_type_info(ClassVar).typing is ClassVar
+    assert get_type_info(ClassVar[int]).typing is ClassVar
     ```
         
 2. You can use `ClassVar_` exported by `typing_inspect_lib`.
@@ -211,11 +224,11 @@ There are two ways to fix this:
     ```python
     from typing import Union
     
-    from typing_inspect_lib import get_special_type, ClassVar_
+    from typing_inspect_lib import get_type_info, ClassVar_
     
-    assert get_special_type(Union) is not ClassVar_
-    assert get_special_type(ClassVar_) is ClassVar_
-    assert get_special_type(ClassVar_[int]) is ClassVar_ # Error in 3.5.1
+    assert get_type_info(Union).typing is not ClassVar_
+    assert get_type_info(ClassVar_).typing is ClassVar_
+    assert get_type_info(ClassVar_[int]).typing is ClassVar_ # Error in 3.5.1
     ```
 
 ### When should I use these compatibility objects?
