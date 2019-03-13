@@ -407,7 +407,7 @@ def _from_types(types, index=1):
 
 
 # TODO: find versions this needs to run in
-if PY_35 and VERSION <= (3, 5, 0):
+if PY_35 and VERSION <= (3, 5, 2):
     def _get_mro(type_):
         return _get_mro_conv_dedupe(_from_types(_safe_getattr_tuple(type_, '__mro__')))
 elif PY_OLD:
@@ -479,7 +479,7 @@ def _get_bases_class(type_):
 
 
 # TODO: find versions this needs to run in
-if PY_35 and VERSION <= (3, 5, 0):
+if PY_35 and VERSION <= (3, 5, 2):
     def _get_bases_default(type_):
         """Get the bases of type. Returns both typing type and class type."""
         bases = _bases(type_)
@@ -498,7 +498,7 @@ else:
 
 
 # TODO: find versions this needs to run in
-if PY_35 and VERSION <= (3, 5, 0):
+if PY_35 and VERSION <= (3, 5, 2):
     def _bases(type_):
         type_ = CLASS_TO_TYPING[type_] or type_
         origins = _safe_getattr_tuple(type_, '__bases__')
@@ -611,7 +611,7 @@ def _inner_set(values):
 
 
 # TODO: find versions this needs to run in
-if PY_35 and VERSION <= (3, 5, 0):
+if PY_35 and VERSION <= (3, 5, 2):
     def _ensure_consumed_parents(type_, parents):
         if parents:
             type_info = get_type_info(type_)
