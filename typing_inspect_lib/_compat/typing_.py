@@ -17,10 +17,8 @@ __all__ = [
     '_ClassVar',
     'ClassVarMeta',
     'NewType',
-    'NoReturn',
     'Protocol',
     'ProtocolMeta',
-    'Type',
     '_Union',
 ]
 
@@ -34,7 +32,6 @@ if _HAS_TE:
 else:
     NewType = _gen_type('NewType')()
 
-Type = getattr(typing, 'Type', _gen_type('Type')())
 BaseProtocol = _gen_type('BaseProtocol')()
 
 if _VERSION == (3, 5, 0) or not _HAS_TE:
@@ -43,15 +40,6 @@ if _VERSION == (3, 5, 0) or not _HAS_TE:
 else:
     Protocol = typing_extensions.Protocol
     ProtocolMeta = typing_extensions._ProtocolMeta
-
-
-if (_PY35 and _VERSION <= (3, 5, 3)) or (_PY36 and _VERSION <= (3, 6, 1)):
-    if _HAS_TE:
-        NoReturn = typing_extensions.NoReturn
-    else:
-        NoReturn = _gen_type('NoReturn')()
-else:
-    NoReturn = typing.NoReturn
 
 if _PY35 and _VERSION <= (3, 5, 2):
     if _HAS_TE:
@@ -63,14 +51,6 @@ if _PY35 and _VERSION <= (3, 5, 2):
 else:
     ClassVar = typing.ClassVar
     ClassVarMeta = _gen_type('ClassVarMeta')
-
-if _PY35 and _VERSION <= (3, 5, 1):
-    if _HAS_TE:
-        Type = typing_extensions.Type
-    else:
-        Type = _gen_type('Type')()
-else:
-    Type = typing.Type
 
 if _PY35 and _VERSION <= (3, 5, 2):
     if _HAS_TE:

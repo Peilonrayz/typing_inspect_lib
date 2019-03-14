@@ -1,4 +1,5 @@
 import itertools
+import typing
 
 
 def pairwise(iterable):
@@ -64,7 +65,7 @@ def _build_type(type_, tuples, before, after):
 
 def _build_tests(type_, t_args, args, start_, stop_, obj, fn):
     if t_args is None and args is None:
-        yield None, type_, True, True, ()
+        yield None, type_, True, True, (), ()
         return
 
     if len(t_args) != len(args):
@@ -76,4 +77,4 @@ def _build_tests(type_, t_args, args, start_, stop_, obj, fn):
         args_ = _build_args(t, t_args, args, start, stop)
         # ClassVar doesn't work with tuples
         tuples = [t[0] if len(t) == 1 else t for t in tuples]
-        yield _build_type(type_, tuples, obj, stop_ > obj) + (args_,)
+        yield _build_type(type_, tuples, obj, stop_ > obj) + (args_, tuple(a for a in args_ if isinstance(a, typing.TypeVar)))

@@ -15,6 +15,18 @@ import typing_inspect_lib
 from typing_inspect_lib._compat import abc as _abc
 from .build_types import _build_tests
 
+from typing import T, T_co, T_contra, V_co, KT, VT, VT_co
+try:
+    from typing import CT_co
+except ImportError:
+    CT_co = typing.TypeVar('CT_co', bound=type, covariant=True)
+
+try:
+    from typing import CT
+except ImportError:
+    CT = typing.TypeVar('CT_co', bound=type, covariant=True)
+
+
 TKey = typing.TypeVar('TKey')
 TValue = typing.TypeVar('TValue')
 TSend = typing.TypeVar('TSend')
@@ -55,22 +67,26 @@ class BaseTestCase(TestCase):
         self.assertEqual(tuple(bool(int(i)) for i in '{:0>11b}'.format(is_)), self._is(type_))
         self.assertEqual(t, typing_inspect_lib.build_types(type_))
 
-    def class_test(self, type_, typing_, class_, is_, t_args=None, args=None, start=0, stop=_STOP, obj=2, fn=lambda i, j: i >= j):
-        for base, obj, special, unwrapped, args in _build_tests(type_, t_args, args, start, stop, obj, fn):
+    def type_test_2(self, type_, typing_, class_, args=None, parameters=None):
+        args = [typing_inspect_lib.build_types(a) for a in args or []]
+        parameters = [typing_inspect_lib.build_types(p) for p in parameters or []]
+        t = typing_inspect_lib.Type(typing_, class_, args, parameters)
+        self.assertEqual(t, typing_inspect_lib.build_types(type_))
+
+    def class_test(self, type_, typing_, class_, t_args=None, args=None, parameters=None, start=0, stop=_STOP, obj=2, fn=lambda i, j: i >= j):
+        for base, obj, special, unwrapped, args, params in _build_tests(type_, t_args, args, start, stop, obj, fn):
+            if special and unwrapped:
+                params = parameters
+            params = [typing_inspect_lib.build_types(p) for p in params or []]
             if not special and unwrapped and all(a in t_args for a in args):
-                args = None
+                args = []
             else:
-                args = [typing_inspect_lib.build_types(a) for a in args] or None
+                args = [typing_inspect_lib.build_types(a) for a in args]
 
             if special:
-                t = typing_inspect_lib.Type(typing_, class_, args)
-                if is_ is typing_inspect_lib.ClassVar_:
-                    self.assertTrue(is_ is typing_inspect_lib.get_special_type(obj))
-                else:
-                    self.assertEqual(is_, typing_inspect_lib.get_special_type(obj))
+                t = typing_inspect_lib.Type(typing_, class_, args, params)
             else:
-                t = typing_inspect_lib.Type(base, base, args)
-                self.assertEqual(None, typing_inspect_lib.get_special_type(obj))
+                t = typing_inspect_lib.Type(base, base, args, params)
             self.assertEqual(t, typing_inspect_lib.build_types(obj))
 
 
@@ -79,31 +95,30 @@ class SpecialTestCase(BaseTestCase):
         self.assertEqual(typing_inspect_lib.build_types(typing.Any), typing_inspect_lib.LiteralType(typing.Any))
 
     def test_callable(self):
-        _is = 0b00100000000
-        self.type_test(typing.Callable, typing.Callable, _abc.Callable, None, _is)
-        self.type_test(typing.Callable[[TKey], TValue], typing.Callable, _abc.Callable, [TKey, TValue], _is)
+        self.type_test_2(typing.Callable, typing.Callable, _abc.Callable, [])
+        self.type_test_2(typing.Callable[[TKey], TValue], typing.Callable, _abc.Callable, [TKey, TValue], [TKey, TValue])
 
     @skipIf(PY35 and VERSION <= (3, 5, 2),
             'ClassVar not in 3.5.[0,2]')
     def test_class_var(self):
-        self.class_test(typing.ClassVar, typing.ClassVar, typing.ClassVar, typing.ClassVar, [TValue], [int], stop=1)
+        self.type_test_2(typing.ClassVar, typing.ClassVar, typing.ClassVar, [])
+        self.type_test_2(typing.ClassVar[TValue], typing.ClassVar, typing.ClassVar, [TValue], [TValue])
 
     def test_generic(self):
-        self.class_test(typing.Generic, typing.Generic, typing.Generic, typing.Generic, [TKey, TValue], [str, int], start=1, obj=1, stop=2)
+        self.class_test(typing.Generic, typing.Generic, typing.Generic, [TKey, TValue], [str, int], start=1, obj=1, stop=2)
 
     def test_optional(self):
-        _is_optional = 0b00001000000
-        _is_union = 0b00010000000
-        self.type_test(typing.Optional, typing.Optional, typing.Optional, None, _is_optional)
-        self.type_test(typing.Optional[TValue], typing.Union, typing.Union, [TValue, type(None)], _is_union)
+        self.type_test_2(typing.Optional, typing.Optional, typing.Optional, [])
+        self.type_test_2(typing.Optional[TValue], typing.Union, typing.Union, [TValue, type(None)], [TValue])
 
     def test_tuple(self):
-        self.class_test(typing.Tuple, typing.Tuple, tuple, typing.Tuple, [TKey, TValue], [str, int], stop=1)
+        self.class_test(typing.Tuple, typing.Tuple, tuple, [TKey, TValue], [str, int], stop=1)
 
     @skipIf(PY35 and VERSION <= (3, 5, 1),
             'Type not in 3.5.[0,1]')
     def test_type(self):
-        self.class_test(typing.Type, typing.Type, type, typing.Type, [TValue], [int])
+        parameters = [CT] if PY35 and VERSION <= (3, 5, 2) else [CT_co]
+        self.class_test(typing.Type, typing.Type, type, [TValue], [int], parameters)
 
     def test_type_var(self):
         self.assertEqual(typing_inspect_lib.build_types(TKey), typing_inspect_lib.VarType(TKey))
@@ -112,170 +127,172 @@ class SpecialTestCase(BaseTestCase):
         self.assertEqual(typing_inspect_lib.build_types(TReturn), typing_inspect_lib.VarType(TReturn))
 
     def test_union(self):
-        self.class_test(typing.Union, typing.Union, typing.Union, typing.Union, [TKey, TValue], [str, int], stop=1, fn=eq)
+        self.class_test(typing.Union, typing.Union, typing.Union, [TKey, TValue], [str, int], stop=1, fn=eq)
 
 
 class ABCTestCase(BaseTestCase):
     def test_abstract_set(self):
-        self.class_test(typing.AbstractSet, typing.AbstractSet, _abc.Set, None, [TValue], [int])
+        self.class_test(typing.AbstractSet, typing.AbstractSet, _abc.Set, [TValue], [int], [T_co])
 
     def test_byte_string(self):
-        self.class_test(typing.ByteString, typing.ByteString, _abc.ByteString, None)
+        self.class_test(typing.ByteString, typing.ByteString, _abc.ByteString)
 
     def test_container(self):
-        self.class_test(typing.Container, typing.Container, _abc.Container, None, [TValue], [int])
+        self.class_test(typing.Container, typing.Container, _abc.Container, [TValue], [int], [T_co])
 
     @skipIf(PY35 and VERSION <= (3, 5, 3),
             'ContextManager not in 3.5.[0,3]')
     def test_context_manager(self):
-        self.class_test(typing.ContextManager, typing.ContextManager, _abc.AbstractContextManager, None, [TValue], [int])
+        self.class_test(typing.ContextManager, typing.ContextManager, _abc.AbstractContextManager, [TValue], [int], [T_co])
 
     def test_hashable(self):
-        self.class_test(typing.Hashable, typing.Hashable, _abc.Hashable, None)
+        self.class_test(typing.Hashable, typing.Hashable, _abc.Hashable)
 
     def test_items_view(self):
-        _is = 0b00000000000
-        self.type_test(typing.ItemsView, typing.ItemsView, _abc.ItemsView, None, _is)
         if PY35 and VERSION <= (3, 5, 1):
-            self.type_test(typing.ItemsView[TKey, TValue, TReturn], typing.ItemsView, _abc.ItemsView, [TKey, TValue, TReturn], _is)
+            self.type_test_2(typing.ItemsView, typing.ItemsView, _abc.ItemsView, [], [T_co, KT, VT_co])
+            self.type_test_2(typing.ItemsView[TKey, TValue, TReturn], typing.ItemsView, _abc.ItemsView,
+                             [TKey, TValue, TReturn], [TKey, TValue, TReturn])
         else:
-            self.type_test(typing.ItemsView[TKey, TValue], typing.ItemsView, _abc.ItemsView, [TKey, TValue], _is)
+            self.type_test_2(typing.ItemsView, typing.ItemsView, _abc.ItemsView, [], [KT, VT_co])
+            self.type_test_2(typing.ItemsView[TKey, TValue], typing.ItemsView, _abc.ItemsView, [TKey, TValue], [TKey, TValue])
 
     def test_iterable(self):
-        self.class_test(typing.Iterable, typing.Iterable, _abc.Iterable, None, [TValue], [int])
+        self.class_test(typing.Iterable, typing.Iterable, _abc.Iterable, [TValue], [int], [T_co])
 
     def test_iterator(self):
-        self.class_test(typing.Iterator, typing.Iterator, _abc.Iterator, None, [TValue], [int])
+        self.class_test(typing.Iterator, typing.Iterator, _abc.Iterator, [TValue], [int], [T_co])
 
     def test_keys_view(self):
-        self.class_test(typing.KeysView, typing.KeysView, _abc.KeysView, None, [TKey], [int])
+        self.class_test(typing.KeysView, typing.KeysView, _abc.KeysView, [TKey], [int], [KT])
 
     def test_mapping(self):
-        self.class_test(typing.Mapping, typing.Mapping, _abc.Mapping, None, [TKey, TValue], [int, str], fn=eq)
+        self.class_test(typing.Mapping, typing.Mapping, _abc.Mapping, [TKey, TValue], [int, str], [KT, VT_co], fn=eq)
 
     def test_mapping_view(self):
-        self.class_test(typing.MappingView, typing.MappingView, _abc.MappingView, None, [TKey], [int])
+        self.class_test(typing.MappingView, typing.MappingView, _abc.MappingView, [TKey], [int], [T_co])
 
     def test_mutable_mapping(self):
-        self.class_test(typing.MutableMapping, typing.MutableMapping, _abc.MutableMapping, None, [TKey, TValue], [int, str], fn=eq)
+        self.class_test(typing.MutableMapping, typing.MutableMapping, _abc.MutableMapping, [TKey, TValue], [int, str], [KT, VT], fn=eq)
 
     def test_mutable_sequence(self):
-        self.class_test(typing.MutableSequence, typing.MutableSequence, _abc.MutableSequence, None, [TValue], [int])
+        self.class_test(typing.MutableSequence, typing.MutableSequence, _abc.MutableSequence, [TValue], [int], [T])
 
     def test_mutable_set(self):
-        self.class_test(typing.MutableSet, typing.MutableSet, _abc.MutableSet, None, [TValue], [int])
+        self.class_test(typing.MutableSet, typing.MutableSet, _abc.MutableSet, [TValue], [int], [T])
 
     def test_sequence(self):
-        self.class_test(typing.Sequence, typing.Sequence, _abc.Sequence, None, [TValue], [int])
+        self.class_test(typing.Sequence, typing.Sequence, _abc.Sequence, [TValue], [int], [T_co])
 
     def test_sized(self):
-        self.class_test(typing.Sized, typing.Sized, _abc.Sized, None)
+        self.class_test(typing.Sized, typing.Sized, _abc.Sized)
 
     def test_values_view(self):
-        self.class_test(typing.ValuesView, typing.ValuesView, _abc.ValuesView, None, [TValue], [str])
+        self.class_test(typing.ValuesView, typing.ValuesView, _abc.ValuesView, [TValue], [str], [VT_co])
 
     @skipIf(VERSION < (3, 5, 2), 'Awaitable requires Python 3.5.2')
     def test_awaitable(self):
-        self.class_test(typing.Awaitable, typing.Awaitable, _abc.Awaitable, None, [TValue], [int])
+        self.class_test(typing.Awaitable, typing.Awaitable, _abc.Awaitable, [TValue], [int], [T_co])
 
     @skipIf(VERSION < (3, 5, 2), 'AsyncIterator requires Python 3.5.2')
     def test_async_iterator(self):
-        self.class_test(typing.AsyncIterator, typing.AsyncIterator, _abc.AsyncIterator, None, [TValue], [int])
+        self.class_test(typing.AsyncIterator, typing.AsyncIterator, _abc.AsyncIterator, [TValue], [int], [T_co])
 
     @skipIf(VERSION < (3, 5, 2), 'AsyncIterable requires Python 3.5.2')
     def test_async_iterable(self):
-        self.class_test(typing.AsyncIterable, typing.AsyncIterable, _abc.AsyncIterable, None, [TValue], [int])
+        self.class_test(typing.AsyncIterable, typing.AsyncIterable, _abc.AsyncIterable, [TValue], [int], [T_co])
 
     @skipIf(VERSION < (3, 5, 3), 'Coroutine requires Python 3.5.3')
     def test_coroutine(self):
-        self.class_test(typing.Coroutine, typing.Coroutine, _abc.Coroutine, None, [TKey, TSend, TReturn], [int, str, str], fn=eq)
+        self.class_test(typing.Coroutine, typing.Coroutine, _abc.Coroutine, [TKey, TSend, TReturn], [int, str, str], [T_co, T_contra, V_co], fn=eq)
 
     @skipIf(VERSION < (3, 6, 0), 'Collection requires Python 3.6')
     def test_collection(self):
-        self.class_test(typing.Collection, typing.Collection, _abc.Collection, None, [TValue], [int])
+        self.class_test(typing.Collection, typing.Collection, _abc.Collection, [TValue], [int], [T_co])
 
     @skipIf(VERSION < (3, 6, 1), 'AsyncGenerator requires Python 3.6.1')
     def test_async_generator(self):
-        self.class_test(typing.AsyncGenerator, typing.AsyncGenerator, _abc.AsyncGenerator, None, [TKey, TSend], [int, str], fn=eq)
+        self.class_test(typing.AsyncGenerator, typing.AsyncGenerator, _abc.AsyncGenerator, [TKey, TSend], [int, str], [T_co, T_contra], fn=eq)
 
     @skipIf(
         VERSION < (3, 5, 4)
         or (PY36 and VERSION <= (3, 6, 1)),
         'AsyncContextManager requires Python 3.5.4 and not in 3.6.[0,1]')
     def test_async_context_manager(self):
-        self.class_test(typing.AsyncContextManager, typing.AsyncContextManager, _abc.AbstractAsyncContextManager, None, [TValue], [int])
+        self.class_test(typing.AsyncContextManager, typing.AsyncContextManager, _abc.AbstractAsyncContextManager,
+                        [TValue], [int], [T_co])
 
 
 class ProtocolsTestCase(BaseTestCase):
     def test_reversible(self):
-        self.class_test(typing.Reversible, typing.Reversible, _abc.Reversible, None, [TValue], [int])
+        self.class_test(typing.Reversible, typing.Reversible, _abc.Reversible, [TValue], [int], [T_co])
 
     def test_supports_abs(self):
-        self.class_test(typing.SupportsAbs, typing.SupportsAbs, typing.SupportsAbs, None)
+        self.class_test(typing.SupportsAbs, typing.SupportsAbs, typing.SupportsAbs, parameters=[T_co])
 
     @skipIf(VERSION < (3, 0, 0), 'SupportsBytes requires Python 3.?.?')
     def test_supports_bytes(self):
-        self.class_test(typing.SupportsBytes, typing.SupportsBytes, typing.SupportsBytes, None)
+        self.class_test(typing.SupportsBytes, typing.SupportsBytes, typing.SupportsBytes)
 
     def test_supports_complex(self):
-        self.class_test(typing.SupportsComplex, typing.SupportsComplex, typing.SupportsComplex, None)
+        self.class_test(typing.SupportsComplex, typing.SupportsComplex, typing.SupportsComplex)
 
     def test_supports_float(self):
-        self.class_test(typing.SupportsFloat, typing.SupportsFloat, typing.SupportsFloat, None)
+        self.class_test(typing.SupportsFloat, typing.SupportsFloat, typing.SupportsFloat)
 
     def test_supports_int(self):
-        self.class_test(typing.SupportsInt, typing.SupportsInt, typing.SupportsInt, None)
+        self.class_test(typing.SupportsInt, typing.SupportsInt, typing.SupportsInt)
 
     @skipIf(VERSION < (3, 0, 0), 'SupportsRound requires Python 3.?.?')
     def test_supports_round(self):
-        self.class_test(typing.SupportsRound, typing.SupportsRound, typing.SupportsRound, None)
+        self.class_test(typing.SupportsRound, typing.SupportsRound, typing.SupportsRound, parameters=[T_co])
 
 
 class CollectionTestCase(BaseTestCase):
     @skipIf((PY35 and VERSION <= (3, 5, 3)) or VERSION == (3, 6, 0),
             'Counter not in 3.5.[0,3] or 3.6.0')
     def test_counter(self):
-        self.class_test(typing.Counter, typing.Counter, collections.Counter, None, [TValue], [int])
+        self.class_test(typing.Counter, typing.Counter, collections.Counter, [TValue], [int], [T])
 
     @skipIf(VERSION < (3, 3, 0) or (PY35 and VERSION <= (3, 5, 3)) or VERSION == (3, 6, 0),
             'ChainMap requires 3.3 and not in 3.5.[0,3] or 3.6.0')
     def test_chain_map(self):
-        self.class_test(typing.ChainMap, typing.ChainMap, collections.ChainMap, None, [TKey, TValue], [int, str], fn=eq)
+        self.class_test(typing.ChainMap, typing.ChainMap, collections.ChainMap, [TKey, TValue], [int, str], [KT, VT], fn=eq)
 
     @skipIf((PY35 and VERSION <= (3, 5, 3)) or VERSION == (3, 6, 0),
             'Deque not in 3.5.[0,3] or 3.6.0')
     def test_deque(self):
-        self.class_test(typing.Deque, typing.Deque, collections.deque, None, [TValue], [int])
+        self.class_test(typing.Deque, typing.Deque, collections.deque, [TValue], [int], [T])
 
     def test_dict(self):
-        self.class_test(typing.Dict, typing.Dict, dict, None, [TKey, TValue], [int, str], fn=eq)
+        self.class_test(typing.Dict, typing.Dict, dict, [TKey, TValue], [int, str], [KT, VT], fn=eq)
 
     @skipIf((PY35 and VERSION <= (3, 5, 1)),
             'DefaultDict not in 3.5.[0,1]')
     def test_default_dict(self):
-        self.class_test(typing.DefaultDict, typing.DefaultDict, collections.defaultdict, None, [TKey, TValue], [int, str], fn=eq)
+        self.class_test(typing.DefaultDict, typing.DefaultDict, collections.defaultdict, [TKey, TValue], [int, str], [KT, VT], fn=eq)
 
     def test_list(self):
-        self.class_test(typing.List, typing.List, list, None, [TValue], [int])
+        self.class_test(typing.List, typing.List, list, [TValue], [int], [T])
 
     def test_set(self):
-        self.class_test(typing.Set, typing.Set, set, None, [TValue], [int])
+        self.class_test(typing.Set, typing.Set, set, [TValue], [int], [T])
 
     def test_frozen_set(self):
-        self.class_test(typing.FrozenSet, typing.FrozenSet, frozenset, None, [TValue], [int])
+        self.class_test(typing.FrozenSet, typing.FrozenSet, frozenset, [TValue], [int], [T_co])
 
     def test_named_tuple(self):
         TestTuple = typing.NamedTuple('TestTuple', [('key', TKey), ('value', TValue)])
 
-        self.class_test(typing.NamedTuple, typing.NamedTuple, typing.NamedTuple, typing.NamedTuple)
-        self.class_test(TestTuple, None, None, None)
+        self.class_test(typing.NamedTuple, typing.NamedTuple, typing.NamedTuple)
+        self.assertEqual(None, typing_inspect_lib.build_types(TestTuple))
 
     @skipIf(VERSION < (3, 7, 2), 'OrderedDict requires Python 3.7.2')
     def test_ordered_dict(self):
-        self.class_test(typing.OrderedDict, typing.OrderedDict, collections.OrderedDict, None, [TKey, TValue], [int, str], fn=eq)
+        self.class_test(typing.OrderedDict, typing.OrderedDict, collections.OrderedDict, [TKey, TValue], [int, str], [KT, VT], fn=eq)
 
     def test_generator(self):
-        self.class_test(typing.Generator, typing.Generator, _abc.Generator, None, [TValue, TSend, TReturn], [int, str, str], fn=eq)
+        self.class_test(typing.Generator, typing.Generator, _abc.Generator, [TValue, TSend, TReturn], [int, str, str], [T_co, T_contra, V_co], fn=eq)
 
 
 class OneOffTestCase(BaseTestCase):
@@ -314,62 +331,74 @@ class ExtensionsTestCase(BaseTestCase):
         globals_ = {'typing_extensions': typing_extensions}
         exec(proto, globals_)
         TestProtocol = globals_['TestProtocol']
-        self.class_test(typing_extensions.Protocol, typing_extensions.Protocol, typing_extensions.Protocol, typing_extensions.Protocol)
-        self.class_test(TestProtocol, typing_extensions.Protocol, TestProtocol, typing_extensions.Protocol)
+        self.class_test(typing_extensions.Protocol, typing_extensions.Protocol, typing_extensions.Protocol)
+        self.class_test(TestProtocol, typing_extensions.Protocol, TestProtocol)
 
     # Special
     def test_class_var(self):
-        self.class_test(typing_extensions.ClassVar, typing_inspect_lib.ClassVar_, typing_inspect_lib.ClassVar_, typing_inspect_lib.ClassVar_, [TValue], [int], stop=1)
+        self.type_test_2(typing_extensions.ClassVar, typing_extensions.ClassVar, typing_extensions.ClassVar, [])
+        self.type_test_2(typing_extensions.ClassVar[TValue], typing_extensions.ClassVar, typing_extensions.ClassVar,
+                         [TValue], [TValue])
 
     def test_type(self):
-        self.class_test(typing_extensions.Type, typing_extensions.Type, type, typing_extensions.Type, [TValue], [int])
+        self.class_test(typing_extensions.Type, typing_extensions.Type, type, [TValue], [int], [CT_co])
 
     # ABCs
     def test_context_manager(self):
-        self.class_test(typing_extensions.ContextManager, typing_extensions.ContextManager, _abc.AbstractContextManager, None, [TValue], [int])
+        self.class_test(typing_extensions.ContextManager, typing_extensions.ContextManager, _abc.AbstractContextManager,
+                        [TValue], [int], [T_co])
 
     @skipIf(VERSION < (3, 5, 0), 'te.Awaitable requires Python 3.5')
     def test_awaitable(self):
-        self.class_test(typing_extensions.Awaitable, typing_extensions.Awaitable, _abc.Awaitable, None, [TValue], [int])
+        self.class_test(typing_extensions.Awaitable, typing_extensions.Awaitable, _abc.Awaitable, [TValue], [int], [T_co])
 
     @skipIf(VERSION < (3, 5, 0), 'te.AsyncIterator requires Python 3.5')
     def test_async_iterator(self):
-        self.class_test(typing_extensions.AsyncIterator, typing_extensions.AsyncIterator, _abc.AsyncIterator, None, [TValue], [int])
+        self.class_test(typing_extensions.AsyncIterator, typing_extensions.AsyncIterator, _abc.AsyncIterator, [TValue], [int], [T_co])
 
     @skipIf(VERSION < (3, 5, 0), 'te.AsyncIterable requires Python 3.5')
     def test_async_iterable(self):
-        self.class_test(typing_extensions.AsyncIterable, typing_extensions.AsyncIterable, _abc.AsyncIterable, None, [TValue], [int])
+        self.class_test(typing_extensions.AsyncIterable, typing_extensions.AsyncIterable, _abc.AsyncIterable, [TValue], [int], [T_co])
 
     @skipIf(VERSION < (3, 5, 0), 'te.Coroutine requires Python 3.5')
     def test_coroutine(self):
-        self.class_test(typing_extensions.Coroutine, typing_extensions.Coroutine, _abc.Coroutine, None, [TKey, TSend, TReturn], [int, str, str], fn=eq)
+        if PY35 and VERSION <= (3, 5, 1):
+            parameters = [V_co, T_co, T_contra]
+        else:
+            parameters = [T_co, T_contra, V_co]
+        self.class_test(typing_extensions.Coroutine, typing_extensions.Coroutine, _abc.Coroutine,
+                        [TKey, TSend, TReturn], [int, str, str], parameters, fn=eq)
 
     @skipIf(VERSION < (3, 6, 0), 'te.AsyncGenerator requires Python 3.6')
     def test_async_generator(self):
-        self.class_test(typing_extensions.AsyncGenerator, typing_extensions.AsyncGenerator, _abc.AsyncGenerator, None, [TKey, TSend], [int, str], fn=eq)
+        self.class_test(typing_extensions.AsyncGenerator, typing_extensions.AsyncGenerator, _abc.AsyncGenerator,
+                        [TKey, TSend], [int, str], [T_co, T_contra], fn=eq)
 
     @skipIf(VERSION < (3, 5, 0), 'te.AsyncContextManager requires Python 3.5')
     def test_async_context_manager(self):
-        self.class_test(typing_extensions.AsyncContextManager, typing_extensions.AsyncContextManager, _abc.AbstractAsyncContextManager, None, [TValue], [int])
+        self.class_test(typing_extensions.AsyncContextManager, typing_extensions.AsyncContextManager, _abc.AbstractAsyncContextManager,
+                        [TValue], [int], [T_co])
 
     @skipIf(VERSION < (3, 3, 0), 'te.ChainMap requires Python 3.3')
     def test_chain_map(self):
-        self.class_test(typing_extensions.ChainMap, typing_extensions.ChainMap, collections.ChainMap, None, [TKey, TValue], [int, str], fn=eq)
+        self.class_test(typing_extensions.ChainMap, typing_extensions.ChainMap, collections.ChainMap, [TKey, TValue], [int, str], [KT, VT], fn=eq)
 
     # collection
     def test_counter(self):
-        _is = 0b00000000000
-        self.type_test(typing_extensions.Counter, typing_extensions.Counter, collections.Counter, None, _is)
+        self.type_test_2(typing_extensions.Counter, typing_extensions.Counter, collections.Counter, [], [T])
         if PY35 and VERSION <= (3, 5, 1):
-            self.type_test(typing_extensions.Counter[TValue], typing_extensions.Counter, collections.Counter, [TValue, int], _is)
+            self.type_test_2(typing_extensions.Counter[TValue], typing_extensions.Counter, collections.Counter,
+                             [TValue, int], [TValue])
         else:
-            self.type_test(typing_extensions.Counter[TValue], typing_extensions.Counter, collections.Counter, [TValue], _is)
+            self.type_test_2(typing_extensions.Counter[TValue], typing_extensions.Counter, collections.Counter,
+                             [TValue], [TValue])
 
     def test_deque(self):
-        self.class_test(typing_extensions.Deque, typing_extensions.Deque, collections.deque, None, [TValue], [int])
+        self.class_test(typing_extensions.Deque, typing_extensions.Deque, collections.deque, [TValue], [int], [T])
 
     def test_default_dict(self):
-        self.class_test(typing_extensions.DefaultDict, typing_extensions.DefaultDict, collections.defaultdict, None, [TKey, TValue], [int, str], fn=eq)
+        self.class_test(typing_extensions.DefaultDict, typing_extensions.DefaultDict, collections.defaultdict,
+                        [TKey, TValue], [int, str], [KT, VT], fn=eq)
 
     # One-off
     def test_new_type(self):
