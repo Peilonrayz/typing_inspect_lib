@@ -1,13 +1,14 @@
 import typing
 import types
 import collections
-import itertools
 try:
     import typing_extensions
 except ImportError:
     pass
 
-from .links import VERSION, PY_35, PY_OLD, LITERAL_TYPES, CLASS_TYPES, TYPING_TYPES, TYPING_TO_CLASS, CLASS_TO_TYPING, SP_CLASS_TYPES_WRAPPED, SP_TYPING_TYPES
+
+from .helpers import _safe_dict_get, _safe_dict_contains, _safe_getattr_tuple, _pairwise
+from .links import VERSION, PY_35, PY_OLD, LITERAL_TYPES, TYPING_OBJECTS, SPECIAL_OBJECTS, SPECIAL_OBJECTS_WRAPPED
 from ._compat import typing_
 
 
@@ -22,22 +23,6 @@ __all__ = [
     'get_mro',
     'get_mro_orig'
 ]
-
-# Utility
-
-
-def _safe_getattr_tuple(type_, key):
-    try:
-        return tuple(getattr(type_, key, None) or [])
-    except TypeError:
-        return ()
-
-
-def _pairwise(it):
-    a, b = itertools.tee(it)
-    next(b, None)
-    return zip(a, b)
-
 
 # Origin code
 
@@ -81,7 +66,7 @@ if PY_OLD:
         """
         origin = _get_last_origin(type_)
         if origin is not None:
-            return origin, TYPING_TO_CLASS[origin] or origin
+            return origin, _safe_dict_get(TYPING_OBJECTS.typing_to_class, origin) or origin
 
         if isinstance(type_, typing.GenericMeta):
             return type_, type_
@@ -90,7 +75,7 @@ else:
     def _get_typing(type_):
         origin = getattr(type_, '__origin__', None)
         if origin is not None:
-            return CLASS_TO_TYPING[origin] or origin, origin
+            return _safe_dict_get(TYPING_OBJECTS.class_to_typing, origin) or origin, origin
 
         if hasattr(type_, '__orig_bases__'):
             return type_, type_
@@ -111,7 +96,7 @@ def _get_special_typing_universal(type_):
 if PY_OLD:
     def _get_special_typing(type_):
         """Handles special types that can't be handled through normal means."""
-        return SP_CLASS_TYPES_WRAPPED[type(type_)]
+        return _safe_dict_get(SPECIAL_OBJECTS_WRAPPED.class_types, type(type_))
 else:
     def _get_special_typing(type_):
         return None
@@ -129,9 +114,9 @@ def get_typing(type_):
     """
     ret = (
         _get_special_typing_universal(type_)
-        or LITERAL_TYPES[type_]
-        or CLASS_TYPES[type_]
-        or TYPING_TYPES[type_]
+        or _safe_dict_get(LITERAL_TYPES, type_)
+        or _safe_dict_get(TYPING_OBJECTS.class_types, type_)
+        or _safe_dict_get(TYPING_OBJECTS.typing_types, type_)
         or _get_typing(type_)
         or _get_special_typing(type_)
     )
@@ -190,7 +175,7 @@ else:
 if PY_35 and VERSION <= (3, 5, 2):
     def _handle_special_type(type_, t_typing):
         """Gets args for types that can't be handled via normal means."""
-        if t_typing in SP_TYPING_TYPES:
+        if _safe_dict_contains(SPECIAL_OBJECTS.typing_types, t_typing):
             if t_typing is typing_.ClassVar:
                 return (type_.__type__,) if type_.__type__ is not None else ()
             if t_typing is typing.Callable:
@@ -386,7 +371,7 @@ def get_type_var_info(tv):
 
 def _get_mro_conv_dedupe(mro):
     collection_mro = iter(
-        TYPING_TO_CLASS[obj] or obj
+        _safe_dict_get(TYPING_OBJECTS.typing_to_class, obj) or obj
         for obj in reversed(mro)
     )
     mro = ()
@@ -406,7 +391,6 @@ def _from_types(types, index=1):
     return mro
 
 
-# TODO: find versions this needs to run in
 if PY_35 and VERSION <= (3, 5, 2):
     def _get_mro(type_):
         return _get_mro_conv_dedupe(_from_types(_safe_getattr_tuple(type_, '__mro__')))
@@ -438,8 +422,8 @@ def get_mro(type_):
         get_mro(abc.Mapping) == mro
         get_mro(Mapping[int, str]) == mro
     """
-    type_ = TYPING_TO_CLASS[type_] or type_
-    if type_ not in CLASS_TYPES:
+    type_ = _safe_dict_get(TYPING_OBJECTS.typing_to_class, type_) or type_
+    if not _safe_dict_contains(TYPING_OBJECTS.class_types, type_):
         _, type_ = get_typing(type_)
     return _get_mro(type_)
 
@@ -458,7 +442,7 @@ def _get_bases_typing(type_):
     return tuple(
         (
             t_type,
-            TYPING_TO_CLASS[t_type] or t_type,
+            _safe_dict_get(TYPING_OBJECTS.typing_to_class, t_type) or t_type,
         )
         for t_type in bases
     )
@@ -471,14 +455,13 @@ def _get_bases_class(type_):
         return None
     return tuple(
         (
-            CLASS_TO_TYPING[t_class] or t_class,
+            _safe_dict_get(TYPING_OBJECTS.class_to_typing, t_class) or t_class,
             t_class,
         )
         for t_class in bases
     )
 
 
-# TODO: find versions this needs to run in
 if PY_35 and VERSION <= (3, 5, 2):
     def _get_bases_default(type_):
         """Get the bases of type. Returns both typing type and class type."""
@@ -488,7 +471,7 @@ if PY_35 and VERSION <= (3, 5, 2):
         return tuple((i.typing, i.class_) for i in bases)
 elif PY_OLD:
     def _get_bases_default(type_):
-        if type_ in CLASS_TYPES:
+        if _safe_dict_contains(TYPING_OBJECTS.class_types, type_):
             return _get_bases_class(type_)
         else:
             return _get_bases_typing(type_)
@@ -497,10 +480,9 @@ else:
         return _get_bases_class(type_)
 
 
-# TODO: find versions this needs to run in
 if PY_35 and VERSION <= (3, 5, 2):
     def _bases(type_):
-        type_ = CLASS_TO_TYPING[type_] or type_
+        type_ = _safe_dict_get(TYPING_OBJECTS.class_to_typing, type_) or type_
         origins = _safe_getattr_tuple(type_, '__bases__')
         if not origins:
             return ()
@@ -564,11 +546,11 @@ def get_bases(type_):
     t = get_type_info(type_)
     if t is None:
         return _bases(type_)
-    if not t.args or t.class_ not in CLASS_TYPES:
+    if not t.args or not _safe_dict_contains(TYPING_OBJECTS.class_types, t.class_):
         return _bases(t.class_)
     bases = ()
     for base in _bases(t.class_):
-        if base.class_ not in CLASS_TYPES:
+        if not _safe_dict_contains(TYPING_OBJECTS.class_types, base.class_):
             bases += base,
         else:
             p = get_parameters(base.typing)
@@ -595,7 +577,9 @@ def get_parents(type_):
     """Gets the parents of the types, returns the typing type, class type and orig type."""
     t = get_type_info(type_)
     if t is None:
-        typing_, class_, orig = CLASS_TO_TYPING.get(type_, type_), TYPING_TO_CLASS.get(type_, type_), None
+        typing_ = _safe_dict_get(TYPING_OBJECTS.class_to_typing, type_, type_)
+        class_ = _safe_dict_get(TYPING_OBJECTS.typing_to_class, type_, type_)
+        orig = None
     else:
         typing_, class_ = t.typing, t.class_
         orig = type_ if t.args else None
@@ -610,12 +594,11 @@ def _inner_set(values):
     return [set(v) for v in vs]
 
 
-# TODO: find versions this needs to run in
 if PY_35 and VERSION <= (3, 5, 2):
     def _ensure_consumed_parents(type_, parents):
         if parents:
             type_info = get_type_info(type_)
-            if type_info.class_ in CLASS_TYPES:
+            if _safe_dict_contains(TYPING_OBJECTS.class_types, type_info.class_):
                 parents.pop(typing.Generic, None)
                 if not parents:
                     return
@@ -639,7 +622,7 @@ def get_mro_orig(type_):
     mro = ()
     for class_ in get_mro(type_):
         if class_ not in parents:
-            mro += _BaseObj(CLASS_TO_TYPING[class_] or class_, class_, None),
+            mro += _BaseObj(_safe_dict_get(TYPING_OBJECTS.class_to_typing, class_) or class_, class_, None),
             continue
 
         classes = parents.pop(class_)
