@@ -1,14 +1,14 @@
-from .get import get_args, get_generic_type, get_parameters, get_type_var_info, get_typing, get_mro, get_bases, get_mro_orig, get_type_info
-from .types_ import Type, VarType, LiteralType, NewType, build_types
+from .core import get_args, get_generic_type, get_parameters, get_typing, get_type_info
+from .extras import get_type_var_info, get_mro, get_bases, get_mro_orig
 
-from ._compat.typing_ import BaseProtocol as BaseProtocol_, ClassVar as ClassVar_, NewType as NewType_, Protocol as Protocol_
+from .core.helpers.typing_ import (
+    BaseProtocol as BaseProtocol_,
+    ClassVar as ClassVar_,
+    NewType as NewType_,
+    Protocol as Protocol_
+)
 
 __all__ = [
-    'LiteralType',
-    'NewType',
-    'Type',
-    'VarType',
-    'build_types',
     'get_args',
     'get_bases',
     'get_type_info',

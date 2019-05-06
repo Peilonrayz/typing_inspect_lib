@@ -1,10 +1,9 @@
 import sys
 import typing
 
-from .links import LITERAL_TYPES
-from . import get
-from ._compat import typing_
-from .helpers import _safe_dict_contains
+from typing_inspect_lib.core.helpers import LITERAL_TYPES, typing_, safe_dict_contains
+from typing_inspect_lib.core import get_type_info
+from typing_inspect_lib.extras import get_type_var_info
 
 __all__ = [
     'LiteralType',
@@ -74,7 +73,7 @@ class VarType(BaseType):
     def __init__(self, type_):
         self.type = type_
         self.typing = typing.TypeVar
-        tv = get.get_type_var_info(type_)
+        tv = get_type_var_info(type_)
         self.name = tv.name
         self.bound = tv.bound
         self.covariant = tv.covariant
@@ -131,7 +130,7 @@ def build_types_info(t):
     if t.typing is typing.TypeVar:
         return VarType(t.class_)
 
-    if _safe_dict_contains(LITERAL_TYPES, t.typing):
+    if safe_dict_contains(LITERAL_TYPES, t.typing):
         return LiteralType(t.typing)
 
     if t.typing is typing_.NewType:
@@ -146,5 +145,5 @@ def build_types_info(t):
 
 
 def build_types(type_):
-    t = get.get_type_info(type_)
+    t = get_type_info(type_)
     return build_types_info(t)

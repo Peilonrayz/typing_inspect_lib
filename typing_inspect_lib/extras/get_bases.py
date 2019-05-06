@@ -1,0 +1,135 @@
+import collections
+
+from ..core.helpers import PY_35, PY_OLD, VERSION, TYPING_OBJECTS, safe_dict_contains, safe_dict_get, safe_getattr_tuple
+
+from ..core import get_type_info, get_typing, get_parameters
+from ..core.get_type_info import _TypeInfo
+
+_BaseObj = collections.namedtuple('BaseObj', ['typing', 'class_', 'orig'])
+
+
+def _get_bases_typing(type_):
+    """Get the bases of type, where the types bases are typing types"""
+    bases = safe_getattr_tuple(type_, '__bases__')
+    if not bases:
+        return None
+    return tuple(
+        (
+            t_type,
+            safe_dict_get(TYPING_OBJECTS.typing_to_class, t_type) or t_type,
+        )
+        for t_type in bases
+    )
+
+
+def _get_bases_class(type_):
+    """Get the bases of type, where the types bases are class types"""
+    bases = safe_getattr_tuple(type_, '__bases__')
+    if not bases:
+        return None
+    return tuple(
+        (
+            safe_dict_get(TYPING_OBJECTS.class_to_typing, t_class) or t_class,
+            t_class,
+        )
+        for t_class in bases
+    )
+
+
+if PY_35 and VERSION <= (3, 5, 2):
+    def _get_bases_default(type_):
+        """Get the bases of type. Returns both typing type and class type."""
+        bases = _bases(type_)
+        if bases is None:
+            return None
+        return tuple((i.typing, i.class_) for i in bases)
+elif PY_OLD:
+    def _get_bases_default(type_):
+        if safe_dict_contains(TYPING_OBJECTS.class_types, type_):
+            return _get_bases_class(type_)
+        else:
+            return _get_bases_typing(type_)
+else:
+    def _get_bases_default(type_):
+        return _get_bases_class(type_)
+
+
+if PY_35 and VERSION <= (3, 5, 2):
+    def _bases(type_):
+        type_ = safe_dict_get(TYPING_OBJECTS.class_to_typing, type_) or type_
+        origins = safe_getattr_tuple(type_, '__bases__')
+        if not origins:
+            return ()
+        mro = ()
+        for orig in origins:
+            t = get_type_info(orig)
+            if t is None:
+                if orig is object:
+                    t = _TypeInfo(orig, orig, (), ())
+                else:
+                    raise ValueError('invalid origin type {} {}'.format(type_, orig))
+            mro += _BaseObj(
+                t.typing,
+                t.class_,
+                orig if len(t.args) > len(t.parameters) else None
+            ),
+        return mro
+else:
+    def _bases(type_):
+        base_defaults = _get_bases_default(type_)
+        if base_defaults is None:
+            return ()
+
+        orig_bases = {}
+        for base in safe_getattr_tuple(type_, '__orig_bases__'):
+            _, class_ = get_typing(base)
+            orig_bases.setdefault(class_, []).append(base)
+
+        orig_bases = {k: iter(v) for k, v in orig_bases.items()}
+
+        sentinel = object()
+        bases = ()
+        for typing_, class_ in base_defaults:
+            if class_ not in orig_bases:
+                bases += _BaseObj(typing_, class_, None),
+                continue
+            b = next(orig_bases[class_], sentinel)
+            if b is sentinel:
+                del orig_bases[class_]
+                bases += _BaseObj(typing_, class_, None),
+            else:
+                bases += _BaseObj(typing_, class_, b),
+
+        left_over = [i for lst in orig_bases.values() for i in lst]
+        if left_over:
+            print(base_defaults, orig_bases)
+            raise ValueError('Did not consume all orig_bases for the class provided. {}'.format(left_over))
+        return bases
+
+
+def get_bases(type_):
+    """
+    Gets the bases of the type, returns the typing type, class type and orig type.
+
+    Examples (Python 3.7):
+
+        get_bases(Mapping) == ((typing.Collection, abc.Collection, None),)
+        get_bases(abc.Mapping) == ((typing.Collection, abc.Collection, None),)
+        get_bases(Mapping[int, int]) == ((typing.Collection, abc.Collection, typing.Collection[int]),)
+    """
+    t = get_type_info(type_)
+    if t is None:
+        return _bases(type_)
+    if not t.args or not safe_dict_contains(TYPING_OBJECTS.class_types, t.class_):
+        return _bases(t.class_)
+    bases = ()
+    for base in _bases(t.class_):
+        if not safe_dict_contains(TYPING_OBJECTS.class_types, base.class_):
+            bases += base,
+        else:
+            p = get_parameters(base.typing)
+            if p:
+                bases += _BaseObj(base.typing, base.class_, base.typing[t.args[:len(p)]]),
+            else:
+                bases += base,
+    return bases

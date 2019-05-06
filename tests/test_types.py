@@ -12,8 +12,10 @@ import collections
 import textwrap
 
 import typing_inspect_lib
-from typing_inspect_lib._compat import abc as _abc
-from .build_types import _build_tests
+from typing_inspect_lib.core.helpers import abc as _abc
+
+from tests.helpers.build_types import _build_tests
+from tests.helpers import types_
 
 from typing import T, T_co, T_contra, V_co, KT, VT, VT_co
 try:
@@ -60,39 +62,32 @@ class BaseTestCase(TestCase):
             special_type is typing_inspect_lib.NewType_
         )
 
-    def type_test(self, type_, typing_, class_, args, is_):
-        if args is not None:
-            args = [typing_inspect_lib.build_types(a) for a in args]
-        t = typing_inspect_lib.Type(typing_, class_, args)
-        self.assertEqual(tuple(bool(int(i)) for i in '{:0>11b}'.format(is_)), self._is(type_))
-        self.assertEqual(t, typing_inspect_lib.build_types(type_))
-
     def type_test_2(self, type_, typing_, class_, args=None, parameters=None):
-        args = [typing_inspect_lib.build_types(a) for a in args or []]
-        parameters = [typing_inspect_lib.build_types(p) for p in parameters or []]
-        t = typing_inspect_lib.Type(typing_, class_, args, parameters)
-        self.assertEqual(t, typing_inspect_lib.build_types(type_))
+        args = [types_.build_types(a) for a in args or []]
+        parameters = [types_.build_types(p) for p in parameters or []]
+        t = types_.Type(typing_, class_, args, parameters)
+        self.assertEqual(t, types_.build_types(type_))
 
     def class_test(self, type_, typing_, class_, t_args=None, args=None, parameters=None, start=0, stop=_STOP, obj=2, fn=lambda i, j: i >= j):
         for base, obj, special, unwrapped, args, params in _build_tests(type_, t_args, args, start, stop, obj, fn):
             if special and unwrapped:
                 params = parameters
-            params = [typing_inspect_lib.build_types(p) for p in params or []]
+            params = [types_.build_types(p) for p in params or []]
             if not special and unwrapped and all(a in t_args for a in args):
                 args = []
             else:
-                args = [typing_inspect_lib.build_types(a) for a in args]
+                args = [types_.build_types(a) for a in args]
 
             if special:
-                t = typing_inspect_lib.Type(typing_, class_, args, params)
+                t = types_.Type(typing_, class_, args, params)
             else:
-                t = typing_inspect_lib.Type(base, base, args, params)
-            self.assertEqual(t, typing_inspect_lib.build_types(obj))
+                t = types_.Type(base, base, args, params)
+            self.assertEqual(t, types_.build_types(obj))
 
 
 class SpecialTestCase(BaseTestCase):
     def test_any(self):
-        self.assertEqual(typing_inspect_lib.build_types(typing.Any), typing_inspect_lib.LiteralType(typing.Any))
+        self.assertEqual(types_.build_types(typing.Any), types_.LiteralType(typing.Any))
 
     def test_callable(self):
         self.type_test_2(typing.Callable, typing.Callable, _abc.Callable, [])
@@ -121,10 +116,10 @@ class SpecialTestCase(BaseTestCase):
         self.class_test(typing.Type, typing.Type, type, [TValue], [int], parameters)
 
     def test_type_var(self):
-        self.assertEqual(typing_inspect_lib.build_types(TKey), typing_inspect_lib.VarType(TKey))
-        self.assertEqual(typing_inspect_lib.build_types(TValue), typing_inspect_lib.VarType(TValue))
-        self.assertEqual(typing_inspect_lib.build_types(TSend), typing_inspect_lib.VarType(TSend))
-        self.assertEqual(typing_inspect_lib.build_types(TReturn), typing_inspect_lib.VarType(TReturn))
+        self.assertEqual(types_.build_types(TKey), types_.VarType(TKey))
+        self.assertEqual(types_.build_types(TValue), types_.VarType(TValue))
+        self.assertEqual(types_.build_types(TSend), types_.VarType(TSend))
+        self.assertEqual(types_.build_types(TReturn), types_.VarType(TReturn))
 
     def test_union(self):
         self.class_test(typing.Union, typing.Union, typing.Union, [TKey, TValue], [str, int], stop=1, fn=eq)
@@ -285,7 +280,7 @@ class CollectionTestCase(BaseTestCase):
         TestTuple = typing.NamedTuple('TestTuple', [('key', TKey), ('value', TValue)])
 
         self.class_test(typing.NamedTuple, typing.NamedTuple, typing.NamedTuple)
-        self.assertEqual(None, typing_inspect_lib.build_types(TestTuple))
+        self.assertEqual(None, types_.build_types(TestTuple))
 
     @skipIf(VERSION < (3, 7, 2), 'OrderedDict requires Python 3.7.2')
     def test_ordered_dict(self):
@@ -297,24 +292,24 @@ class CollectionTestCase(BaseTestCase):
 
 class OneOffTestCase(BaseTestCase):
     def test_anystr(self):
-        self.assertEqual(typing_inspect_lib.build_types(typing.AnyStr), typing_inspect_lib.VarType(typing.AnyStr))
+        self.assertEqual(types_.build_types(typing.AnyStr), types_.VarType(typing.AnyStr))
 
     @skipIf(PY35 and VERSION <= (3, 5, 1),
             'NewType not in 3.5.[0,1]')
     def test_new_type(self):
         TestType = typing.NewType('TestType', int)
-        self.assertEqual(typing_inspect_lib.build_types(TestType), typing_inspect_lib.NewType(TestType))
+        self.assertEqual(types_.build_types(TestType), types_.NewType(TestType))
 
     @skipIf((PY35 and VERSION <= (3, 5, 3))
             or (PY36 and VERSION <= (3, 6, 1)),
             'NoReturn not in 3.5.[0,3] or 3.6.[0,1]')
     def test_no_return(self):
-        self.assertEqual(typing_inspect_lib.build_types(typing.NoReturn), typing_inspect_lib.LiteralType(typing.NoReturn))
+        self.assertEqual(types_.build_types(typing.NoReturn), types_.LiteralType(typing.NoReturn))
 
     @skipIf(PY35 and VERSION <= (3, 5, 1),
             'Text not in 3.5.[0,1]')
     def test_text(self):
-        self.assertEqual(typing_inspect_lib.build_types(typing.Text), typing_inspect_lib.LiteralType(typing.Text))
+        self.assertEqual(types_.build_types(typing.Text), types_.LiteralType(typing.Text))
 
 
 @skipIf(not _HAS_TE, 'Typing extension test require it to be installed.')
@@ -403,10 +398,10 @@ class ExtensionsTestCase(BaseTestCase):
     # One-off
     def test_new_type(self):
         TestType = typing_extensions.NewType('TestType', int)
-        self.assertEqual(typing_inspect_lib.build_types(TestType), typing_inspect_lib.NewType(TestType))
+        self.assertEqual(types_.build_types(TestType), types_.NewType(TestType))
 
     def test_no_return(self):
-        self.assertEqual(typing_inspect_lib.build_types(typing_extensions.NoReturn), typing_inspect_lib.LiteralType(typing_extensions.NoReturn))
+        self.assertEqual(types_.build_types(typing_extensions.NoReturn), types_.LiteralType(typing_extensions.NoReturn))
 
     def test_text(self):
-        self.assertEqual(typing_inspect_lib.build_types(typing_extensions.Text), typing_inspect_lib.LiteralType(typing_extensions.Text))
+        self.assertEqual(types_.build_types(typing_extensions.Text), types_.LiteralType(typing_extensions.Text))

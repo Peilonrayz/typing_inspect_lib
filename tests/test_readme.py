@@ -8,7 +8,7 @@ try:
 except ImportError:
     import collections as abc
 
-from typing_inspect_lib import get_typing, get_args, build_types, get_parameters, get_type_var_info, get_mro, get_bases, get_mro_orig
+from typing_inspect_lib import get_typing, get_args, get_parameters, get_type_var_info, get_mro, get_bases, get_mro_orig
 
 VERSION = sys.version_info[:3]
 
@@ -49,13 +49,6 @@ class SpecialTestCase(TestCase):
         self.assertNotEqual((), get_parameters(Mapping))
         mapping_parameters = tuple(get_type_var_info(p) for p in get_parameters(Mapping))
         self.assertEqual((('KT', None, False, False), ('VT_co', None, True, False)), mapping_parameters)
-
-    def test_build_types(self):
-        type_ = build_types(Mapping[Union[str, int], int])
-        self.assertEqual(Mapping, type_.typing)
-        self.assertEqual(abc.Mapping, type_.class_)
-        self.assertEqual(Union, type_.args[0].typing)
-        self.assertEqual(str, type_.args[0].args[0].typing)
 
     def test_bases(self):
         if VERSION[:2] == (3, 5) and VERSION <= (3, 5, 2):

@@ -1,6 +1,5 @@
 import collections
 import typing
-import sys
 import operator
 import json
 import os.path
@@ -10,23 +9,16 @@ try:
 except ImportError:
     pass
 
-from ._compat import typing_, abc
-
+from . import abc
+from . import typing_
+from .helpers import VERSION, PY_OLD, PY_35, PY350_2
 
 __all__ = [
-    'VERSION',
-    'PY_OLD',
-    'PY_35',
     'LITERAL_TYPES',
     'TYPING_OBJECTS',
     'SPECIAL_OBJECTS',
     'SPECIAL_OBJECTS_WRAPPED',
 ]
-
-VERSION = sys.version_info[:3]
-PY_OLD = VERSION < (3, 7, 0)
-PY_35 = VERSION[:2] == (3, 5)
-_PY350_2 = PY_35 and VERSION <= (3, 5, 2)
 
 _SENTINEL = object()
 
@@ -121,8 +113,8 @@ SPECIAL_OBJECTS_WRAPPED = Types(_read_globals(_LINKS['special wrapped']))
 
 SPECIAL_OBJECTS_WRAPPED.update_class_types([
     (SPECIAL_OBJECTS_WRAPPED.typing_to_class[typing.Callable], (typing.CallableMeta if PY_OLD else collections.abc.Callable)),
-    (typing_.ClassVar, (typing_.ClassVarMeta if _PY350_2 else typing_._ClassVar)),
-    (typing.Optional, (typing.OptionalMeta if _PY350_2 else typing.Optional)),
+    (typing_.ClassVar, (typing_.ClassVarMeta if PY350_2 else typing_._ClassVar)),
+    (typing.Optional, (typing.OptionalMeta if PY350_2 else typing.Optional)),
     (SPECIAL_OBJECTS_WRAPPED.typing_to_class[typing.Tuple], (typing.TupleMeta if PY_OLD else tuple)),
-    (typing.Union, (typing.UnionMeta if _PY350_2 else typing_._Union)),
+    (typing.Union, (typing.UnionMeta if PY350_2 else typing_._Union)),
 ])
