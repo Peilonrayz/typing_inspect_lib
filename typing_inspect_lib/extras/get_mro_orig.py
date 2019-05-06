@@ -1,17 +1,15 @@
 import typing
 
-from ..core.helpers import PY_35, VERSION, TYPING_OBJECTS, safe_dict_contains, safe_dict_get, pairwise
-
-from ..core import get_type_info, get_args
-
-from .get_mro import get_mro
 from .get_bases import _BaseObj
+from .get_mro import get_mro
 from .get_parents import get_parents
+from ..core import get_args, get_type_info
+from ..core.helpers import PY_35, TYPING_OBJECTS, VERSION, pairwise, safe_dict_contains, safe_dict_get
 
 
 def _inner_set(values):
-    vs = zip(*values)
-    return [set(v) for v in vs]
+    values_ = zip(*values)
+    return [set(value) for value in values_]
 
 
 if PY_35 and VERSION <= (3, 5, 2):
@@ -22,11 +20,11 @@ if PY_35 and VERSION <= (3, 5, 2):
                 parents.pop(typing.Generic, None)
                 if not parents:
                     return
-            raise ValueError("Didn't consume all parents: {}".format(parents))
+            raise ValueError("Didn't consume all parents: {0}".format(parents))
 else:
     def _ensure_consumed_parents(type_, parents):
         if parents:
-            raise ValueError("Didn't consume all parents: {}".format(parents))
+            raise ValueError("Didn't consume all parents: {0}".format(parents))
 
 
 def get_mro_orig(type_):
@@ -42,7 +40,7 @@ def get_mro_orig(type_):
     mro = ()
     for class_ in get_mro(type_):
         if class_ not in parents:
-            mro += _BaseObj(safe_dict_get(TYPING_OBJECTS.class_to_typing, class_) or class_, class_, None),
+            mro += (_BaseObj(safe_dict_get(TYPING_OBJECTS.class_to_typing, class_) or class_, class_, None),)
             continue
 
         classes = parents.pop(class_)
@@ -50,7 +48,7 @@ def get_mro_orig(type_):
             raise ValueError('MRO has two different types using the same class')
 
         if all(c.orig is None for c in classes):
-            mro += classes[0],
+            mro += (classes[0],)
             continue
 
         args = _inner_set(get_args(c.orig) if c.orig is not None else {} for c in classes)
@@ -59,11 +57,11 @@ def get_mro_orig(type_):
             if not args:
                 raise ValueError('One argument is empty')
             if len(arg) == 1:
-                new_args += arg.pop(),
+                new_args += (arg.pop(),)
             else:
-                new_args += typing.Union[tuple(arg)],
-        c = classes[0]
-        mro += _BaseObj(c.typing, c.class_, c.typing[new_args]),
+                new_args += (typing.Union[tuple(arg)],)
+        class__ = classes[0]
+        mro += (_BaseObj(class__.typing, class__.class_, class__.typing[new_args]),)
 
     _ensure_consumed_parents(type_, parents)
 

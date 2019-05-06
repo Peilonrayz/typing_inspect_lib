@@ -1,14 +1,14 @@
+import sys
+import typing
+from typing import Container, Generic, Iterable, Mapping, Reversible, Sequence, Sized, TypeVar, Union
 from unittest import TestCase, skipIf
 
-import sys
-from typing import Generic, Union, Mapping, TypeVar, Sequence, Sized, Iterable, Container, Reversible
-import typing
 try:
-    import collections.abc as abc
+    import collections.abc as abc  # noqa: I200
 except ImportError:
     import collections as abc
 
-from typing_inspect_lib import get_typing, get_args, get_parameters, get_type_var_info, get_mro, get_bases, get_mro_orig
+from typing_inspect_lib import get_args, get_bases, get_mro, get_mro_orig, get_parameters, get_type_var_info, get_typing
 
 VERSION = sys.version_info[:3]
 
@@ -29,14 +29,14 @@ class SpecialTestCase(TestCase):
         self.assertEqual((Union[str, int], int), get_args(Mapping[Union[str, int], int]))
 
     def test_get_parameters(self):
-        TKey = TypeVar('TKey')
-        TValue = TypeVar('TValue')
+        TKey = TypeVar('TKey')  # noqa: N806
+        TValue = TypeVar('TValue')  # noqa: N806
 
         self.assertEqual((), get_parameters(Mapping[str, int]))
         self.assertEqual((TKey, TValue), get_parameters(Mapping[TKey, TValue]))
 
     def test_get_type_var_info(self):
-        TExample = TypeVar('TExample', bound=int)
+        TExample = TypeVar('TExample', bound=int)  # noqa: N806
         t_example = get_type_var_info(TExample)
 
         self.assertEqual(('TExample', int, False, False), t_example)
@@ -56,13 +56,13 @@ class SpecialTestCase(TestCase):
                 (Sized, abc.Sized, None),
                 (Iterable, abc.Iterable, Iterable[int]),
                 (Container, abc.Container, Container[int]),
-                (Generic, Generic, None)
+                (Generic, Generic, None),
             )
         elif VERSION < (3, 6, 0):
             mro = (
                 (Sized, abc.Sized, None),
                 (Iterable, abc.Iterable, Iterable[int]),
-                (Container, abc.Container, Container[int])
+                (Container, abc.Container, Container[int]),
             )
         else:
             mro = (
@@ -87,7 +87,7 @@ class SpecialTestCase(TestCase):
             bases = (
                 (Mapping, abc.Mapping, Mapping[int, str]),
                 (Sequence, abc.Sequence, Sequence[str]),
-                (Generic, Generic, None)
+                (Generic, Generic, None),
             )
 
         self.assertEqual(bases, get_bases(T))
@@ -99,7 +99,7 @@ class SpecialTestCase(TestCase):
                 abc.Sized,
                 abc.Iterable,
                 abc.Container,
-                object
+                object,
             )
         else:
             mro = (
@@ -108,7 +108,7 @@ class SpecialTestCase(TestCase):
                 abc.Sized,
                 abc.Iterable,
                 abc.Container,
-                object
+                object,
             )
         self.assertEqual(get_mro(Mapping), mro)
         self.assertEqual(get_mro(abc.Mapping), mro)
@@ -127,7 +127,7 @@ class SpecialTestCase(TestCase):
                 abc.Iterable,
                 abc.Container,
                 Generic,
-                object
+                object,
             )
         else:
             bases = (
@@ -140,7 +140,7 @@ class SpecialTestCase(TestCase):
                 abc.Iterable,
                 abc.Container,
                 Generic,
-                object
+                object,
             )
 
         self.assertEqual(bases, get_mro(T))
@@ -152,7 +152,7 @@ class SpecialTestCase(TestCase):
                 (Sized, abc.Sized, None),
                 (Iterable, abc.Iterable, Iterable[int]),
                 (Container, abc.Container, Container[int]),
-                (object, object, None)
+                (object, object, None),
             )
         else:
             mro = (
@@ -161,7 +161,7 @@ class SpecialTestCase(TestCase):
                 (Sized, abc.Sized, None),
                 (Iterable, abc.Iterable, Iterable[int]),
                 (Container, abc.Container, Container[int]),
-                (object, object, None)
+                (object, object, None),
             )
 
         base_mro = tuple((t, c, None) for t, c, _ in mro)
@@ -184,7 +184,7 @@ class SpecialTestCase(TestCase):
                 (Iterable, abc.Iterable, Iterable[Union[int, str]]),
                 (Container, abc.Container, Container[Union[int, str]]),
                 (Generic, Generic, None),
-                (object, object, None)
+                (object, object, None),
             )
         elif VERSION < (3, 6, 0):
             bases = (
@@ -195,7 +195,7 @@ class SpecialTestCase(TestCase):
                 (Iterable, abc.Iterable, Iterable[Union[str, int]]),
                 (Container, abc.Container, Container[Union[str, int]]),
                 (Generic, Generic, None),
-                (object, object, None)
+                (object, object, None),
             )
         else:
             bases = (
@@ -208,7 +208,7 @@ class SpecialTestCase(TestCase):
                 (Iterable, abc.Iterable, Iterable[Union[str, int]]),
                 (Container, abc.Container, Container[Union[str, int]]),
                 (Generic, Generic, None),
-                (object, object, None)
+                (object, object, None),
             )
 
         self.assertEqual(bases, get_mro_orig(T))

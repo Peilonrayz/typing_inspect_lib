@@ -5,7 +5,7 @@ import typing
 _TypeVarInfo = collections.namedtuple('TypeVarInfo', ['name', 'bound', 'covariant', 'contravariant'])
 
 
-def get_type_var_info(tv):
+def get_type_var_info(type_var):
     """
     Get information in a TypeVar
 
@@ -20,11 +20,11 @@ def get_type_var_info(tv):
         t_example.covariant is False
         t_example.contravariant is False
     """
-    if not isinstance(tv, typing.TypeVar):
+    if not isinstance(type_var, typing.TypeVar):
         raise TypeError('get_type_var_info must be passed a TypeVar')
     return _TypeVarInfo(
-        getattr(tv, '__name__', None),
-        getattr(tv, '__bound__', None),
-        getattr(tv, '__covariant__', None),
-        getattr(tv, '__contravariant__', None)
+        getattr(type_var, '__name__', None),
+        getattr(type_var, '__bound__', None),
+        getattr(type_var, '__covariant__', None),
+        getattr(type_var, '__contravariant__', None),
     )

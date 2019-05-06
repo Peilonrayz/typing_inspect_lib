@@ -1,8 +1,8 @@
 import typing
 
-from typing_inspect_lib.core.helpers import LITERAL_TYPES, typing_, safe_dict_contains
 from typing_inspect_lib import get_type_info, get_type_var_info
 from typing_inspect_lib.core.get_type_info import _TypeInfo
+from typing_inspect_lib.core.helpers import LITERAL_TYPES, safe_dict_contains, typing_
 
 __all__ = [
     'Type',
@@ -15,22 +15,22 @@ VarType = get_type_var_info
 
 
 def build_types(type_):
-    t = get_type_info(type_)
-    if t is None:
+    type_info = get_type_info(type_)
+    if type_info is None:
         return None
 
-    if t.typing is typing.TypeVar:
-        return VarType(t.class_)
+    if type_info.typing is typing.TypeVar:
+        return VarType(type_info.class_)
 
-    if safe_dict_contains(LITERAL_TYPES, t.typing):
-        return t.typing
+    if safe_dict_contains(LITERAL_TYPES, type_info.typing):
+        return type_info.typing
 
-    if t.typing is typing_.NewType:
-        return t.class_
+    if type_info.typing is typing_.NewType:
+        return type_info.class_
 
     return Type(
-        t.typing,
-        t.class_,
-        tuple(build_types(a) for a in t.args),
-        tuple(build_types(p) for p in t.parameters)
+        type_info.typing,
+        type_info.class_,
+        tuple(build_types(a) for a in type_info.args),
+        tuple(build_types(p) for p in type_info.parameters),
     )

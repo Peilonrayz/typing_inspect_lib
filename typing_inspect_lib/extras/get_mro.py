@@ -1,6 +1,5 @@
-from ..core.helpers import PY_35, PY_OLD, VERSION, TYPING_OBJECTS, safe_dict_contains, safe_dict_get, safe_getattr_tuple
-
 from ..core import get_typing
+from ..core.helpers import PY_35, PY_OLD, TYPING_OBJECTS, VERSION, safe_dict_contains, safe_dict_get, safe_getattr_tuple
 
 
 def _get_mro_conv_dedupe(mro):
@@ -13,15 +12,15 @@ def _get_mro_conv_dedupe(mro):
     for obj in collection_mro:
         if obj not in mro_set:
             mro_set.add(obj)
-            mro += obj,
+            mro += (obj,)
     return tuple(reversed(mro))
 
 
 def _from_types(types, index=1):
     mro = ()
     for type_ in types:
-        t = get_typing(type_)[index]
-        mro += type_ if t is None else t,
+        typing = get_typing(type_)[index]
+        mro += (type_ if typing is None else typing,)
     return mro
 
 

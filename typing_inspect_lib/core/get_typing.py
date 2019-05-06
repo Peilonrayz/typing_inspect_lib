@@ -1,9 +1,8 @@
-import typing
 import types
-
-from .helpers import safe_dict_get, PY_OLD, LITERAL_TYPES, TYPING_OBJECTS, SPECIAL_OBJECTS_WRAPPED, typing_
+import typing
 
 from .get_origins import _get_last_origin
+from .helpers import LITERAL_TYPES, PY_OLD, SPECIAL_OBJECTS_WRAPPED, TYPING_OBJECTS, safe_dict_get, typing_
 
 
 if PY_OLD:
@@ -69,16 +68,16 @@ def get_typing(type_):
         get_typing(Union[str, int]) == (Union, Union)
     """
     ret = (
-            _get_special_typing_universal(type_)
-            or safe_dict_get(LITERAL_TYPES, type_)
-            or safe_dict_get(TYPING_OBJECTS.class_types, type_)
-            or safe_dict_get(TYPING_OBJECTS.typing_types, type_)
-            or _get_typing(type_)
-            or _get_special_typing(type_)
+        _get_special_typing_universal(type_)
+        or safe_dict_get(LITERAL_TYPES, type_)
+        or safe_dict_get(TYPING_OBJECTS.class_types, type_)
+        or safe_dict_get(TYPING_OBJECTS.typing_types, type_)
+        or _get_typing(type_)
+        or _get_special_typing(type_)
     )
     if ret is None:
         return None, None
-    t, c = ret
-    if t is typing_.NewType:
-        c = type_
-    return t, c
+    type_type, class_type = ret
+    if type_type is typing_.NewType:
+        class_type = type_
+    return type_type, class_type

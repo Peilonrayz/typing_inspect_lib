@@ -1,17 +1,12 @@
 import collections
-import typing
-import operator
 import json
+import operator
 import os.path
-
-try:
-    import typing_extensions
-except ImportError:
-    pass
+import typing
 
 from . import abc
 from . import typing_
-from .helpers import VERSION, PY_OLD, PY_35, PY350_2
+from .helpers import PY350_2, PY_35, PY_OLD, VERSION
 
 __all__ = [
     'LITERAL_TYPES',
@@ -34,7 +29,7 @@ _OLD_CLASS = {
     (typing.Set, abc.MutableSet): set,
     (typing.FrozenSet, abc.Set): frozenset,
     (typing.Tuple, typing.Tuple): tuple,
-    (typing.Callable, typing.Callable): abc.Callable
+    (typing.Callable, typing.Callable): abc.Callable,
 }
 
 
@@ -50,7 +45,7 @@ else:
         return getattr(t_typing, '__origin__', None) or t_typing
 
 
-class Types(object):
+class Types(object):  # pylint: disable=useless-object-inheritance, too-few-public-methods
     def __init__(self, types):
         typings = [
             (t, _from_typing_to_class(t))
@@ -88,11 +83,11 @@ def _read_globals(global_attrs):
         mod, attr = attr.split('.', 1)
         get = operator.attrgetter(attr)
         try:
-            v = get(global_[mod])
+            value = get(global_[mod])
         except (AttributeError, KeyError):
             pass
         else:
-            values.append(v)
+            values.append(value)
     return values
 
 
@@ -103,8 +98,8 @@ LITERAL_TYPES = _literal_to_link_types(
         bytes,
         type(None),
     ]
-    + ([unicode] if VERSION < (3, 0, 0) else [])
-    + _read_globals(_LINKS['literal'])
+    + ([unicode] if VERSION < (3, 0, 0) else [])  # noqa: F821 pylint: disable=undefined-variable
+    + _read_globals(_LINKS['literal']),
 )
 
 TYPING_OBJECTS = Types(_read_globals(_LINKS['typing']))
@@ -112,7 +107,10 @@ SPECIAL_OBJECTS = Types(_read_globals(_LINKS['special']))
 SPECIAL_OBJECTS_WRAPPED = Types(_read_globals(_LINKS['special wrapped']))
 
 SPECIAL_OBJECTS_WRAPPED.update_class_types([
-    (SPECIAL_OBJECTS_WRAPPED.typing_to_class[typing.Callable], (typing.CallableMeta if PY_OLD else collections.abc.Callable)),
+    (
+        SPECIAL_OBJECTS_WRAPPED.typing_to_class[typing.Callable],
+        (typing.CallableMeta if PY_OLD else collections.abc.Callable),
+    ),
     (typing_.ClassVar, (typing_.ClassVarMeta if PY350_2 else typing_._ClassVar)),
     (typing.Optional, (typing.OptionalMeta if PY350_2 else typing.Optional)),
     (SPECIAL_OBJECTS_WRAPPED.typing_to_class[typing.Tuple], (typing.TupleMeta if PY_OLD else tuple)),

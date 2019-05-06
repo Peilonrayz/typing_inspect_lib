@@ -1,5 +1,7 @@
-import contextlib
+# pylint: disable=invalid-name
+
 import collections
+import contextlib
 import sys
 import types
 import typing
@@ -42,7 +44,7 @@ __all__ = [
 
     # contextlib
     'AbstractContextManager',
-    'AbstractAsyncContextManager'
+    'AbstractAsyncContextManager',
 ]
 
 if _VERSION < (3, 3, 0):

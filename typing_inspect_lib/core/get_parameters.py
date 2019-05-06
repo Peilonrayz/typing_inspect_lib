@@ -1,9 +1,8 @@
 import typing
 
-from .helpers import PY_35, VERSION, PY_OLD, safe_getattr_tuple, typing_
-
-from .get_typing import get_typing
 from .get_args import get_args
+from .get_typing import get_typing
+from .helpers import PY_35, PY_OLD, VERSION, safe_getattr_tuple, typing_
 
 SENTINEL = object()
 
@@ -12,7 +11,7 @@ if PY_35 and VERSION <= (3, 5, 2):
         typing_.ClassVar,
         typing.Callable,
         typing.Union,
-        typing.Tuple
+        typing.Tuple,
     }
 
     def _get_parameters(type_, t_typing=SENTINEL):

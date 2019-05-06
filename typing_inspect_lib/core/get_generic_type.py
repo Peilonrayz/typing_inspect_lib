@@ -2,9 +2,10 @@ import typing
 
 from .helpers import PY_OLD, typing_
 
-if PY_OLD:
-    def get_generic_type(type_):
-        """Gets the generic type of the type provided, and if the type is a generic unwrapped type."""
+# TODO: reduce complexity
+if PY_OLD:  # noqa: MC0001
+    def get_generic_type(type_):  # pylint: disable=too-many-return-statements
+        """Get the generic type of the type provided. If the type is a generic unwrapped type."""
         ret_type = None
         if isinstance(type_, typing._ProtocolMeta):
             ret_type = typing_.BaseProtocol
@@ -20,7 +21,7 @@ if PY_OLD:
                 return ret_type, False
         return None, None
 else:
-    def get_generic_type(type_):
+    def get_generic_type(type_):  # pylint: disable=too-many-return-statements
         if isinstance(type_, typing._ProtocolMeta):
             return typing_.BaseProtocol, True
         if isinstance(type_, typing_.ProtocolMeta):

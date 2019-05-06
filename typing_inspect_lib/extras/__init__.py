@@ -2,7 +2,7 @@ __all__ = [
     'get_bases',
     'get_type_var_info',
     'get_mro',
-    'get_mro_orig'
+    'get_mro_orig',
 ]
 
 from .get_bases import get_bases

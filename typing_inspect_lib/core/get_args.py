@@ -1,19 +1,14 @@
 import typing
-try:
-    import typing_extensions
-except ImportError:
-    pass
 
-from .helpers import safe_dict_contains, safe_getattr_tuple, VERSION, PY_35, PY_OLD, SPECIAL_OBJECTS, typing_
-
-from .get_origins import _get_origins
 from .get_generic_type import get_generic_type
+from .get_origins import _get_origins
 from .get_typing import get_typing
+from .helpers import PY_35, PY_OLD, SPECIAL_OBJECTS, VERSION, safe_dict_contains, safe_getattr_tuple, typing_
 
-
-if PY_35 and VERSION <= (3, 5, 2):
-    def _handle_special_type(type_, t_typing):
-        """Gets args for types that can't be handled via normal means."""
+# TODO: reduce complexity
+if PY_35 and VERSION <= (3, 5, 2):  # noqa: MC0001
+    def _handle_special_type(type_, t_typing):  # pylint: disable=too-many-return-statements
+        """Get args for types that can't be handled via normal means."""
         if safe_dict_contains(SPECIAL_OBJECTS.typing_types, t_typing):
             if t_typing is typing_.ClassVar:
                 return (type_.__type__,) if type_.__type__ is not None else ()
@@ -38,17 +33,17 @@ elif PY_OLD:
 
 
 def _parameters_link(args, parameters):
-    """Builds arguments based on the arguments and parameters provided."""
+    """Build arguments based on the arguments and parameters provided."""
     args_ = {}
-    for i, a in enumerate(args):
-        args_.setdefault(a, []).append(i)
-    args_ = {k: iter(v) for k, v in args_.items()}
+    for index, arg in enumerate(args):
+        args_.setdefault(arg, []).append(index)
+    args_ = {key: iter(value) for key, value in args_.items()}
     return [next(args_.get(p, iter([p]))) for p in parameters]
 
 
 if PY_35 and VERSION <= (3, 5, 1):
     def _handle_origin(type_):
-        """Get arguments of provided type based on the origins of the type"""
+        """Get arguments of provided type based on the origins of the type."""
         if getattr(type_, '__origin__', None) is not None:
             return safe_getattr_tuple(type_, '__parameters__')
         return None
@@ -70,8 +65,8 @@ SENTINEL = object()
 
 if PY_OLD:
     def _get_args(type_, t_typing=SENTINEL):
-        if type(type_) is typing._TypeAlias:
-            return type_.type_var,
+        if type(type_) is typing._TypeAlias:  # pylint: disable=unidiomatic-typecheck
+            return (type_.type_var,)
         _, base = get_generic_type(type_)
         if base:
             return ()
@@ -85,7 +80,7 @@ if PY_OLD:
             return origin_args
         return ()
 else:
-    def _get_args(type_, t_typing=SENTINEL):
+    def _get_args(type_, t_typing=SENTINEL):  # pylint: disable=unused-argument
         _, base = get_generic_type(type_)
         if base:
             return ()
@@ -93,8 +88,7 @@ else:
 
 
 def get_args(type_):
-    """
-    Gets the arguments stored in the type provided.
+    """Get the arguments stored in the type provided.
 
     Examples:
 

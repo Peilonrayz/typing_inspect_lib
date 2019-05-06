@@ -1,12 +1,11 @@
-from .core import get_args, get_generic_type, get_parameters, get_typing, get_type_info
-from .extras import get_type_var_info, get_mro, get_bases, get_mro_orig
-
+from .core import get_args, get_parameters, get_type_info, get_typing
 from .core.helpers.typing_ import (
     BaseProtocol as BaseProtocol_,
     ClassVar as ClassVar_,
     NewType as NewType_,
-    Protocol as Protocol_
+    Protocol as Protocol_,
 )
+from .extras import get_bases, get_mro, get_mro_orig, get_type_var_info
 
 __all__ = [
     'get_args',

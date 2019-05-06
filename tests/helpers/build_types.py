@@ -10,32 +10,32 @@ def pairwise(iterable):
 
 def _find_all_combinations(start, stop, amount, fn=lambda i, j: i >= j):
     range_ = [-1] + list(range(start, stop))
-    for t in itertools.product(range_, repeat=amount):
-        if all(fn(i, j) for i, j in pairwise(t)):
-            yield t
+    for combination in itertools.product(range_, repeat=amount):
+        if all(fn(prev, curr) for prev, curr in pairwise(combination)):
+            yield combination
 
 
 def _build_args(placements, t_args, args, start, stop):
     return [
-        (t_args if p >= stop else args)[i]
-        for i, p in enumerate(placements)
-        if p >= start
+        (t_args if placement >= stop else args)[index]
+        for index, placement in enumerate(placements)
+        if placement >= start
     ]
 
 
 def _build_tuples(placements, t_args, args, total):
     sentinel = object()
     values = list(t_args)
-    for i in range(total):
-        for j, (v, p) in enumerate(zip(values, placements)):
-            if p < i:
+    for index in range(total):
+        for sub_index, (value_, placement) in enumerate(zip(values, placements)):
+            if placement < index:
                 value = sentinel
-            elif i == p:
-                value = args[j]
+            elif index == placement:
+                value = args[sub_index]
             else:
-                value = v
-            values[j] = value
-        values = [v for v in values if v is not sentinel]
+                value = value_
+            values[sub_index] = value
+        values = [value for value in values if value is not sentinel]
         if not values:
             break
         yield tuple(values)
@@ -45,8 +45,8 @@ def _build_type(type_, tuples, before, after):
     tuples = list(tuples)
 
     base = obj = type_
-    for t in tuples[:before]:
-        obj = obj[t]
+    for tuple_ in tuples[:before]:
+        obj = obj[tuple_]
 
     if len(tuples) >= before and after:
         class Test(obj):
@@ -54,11 +54,11 @@ def _build_type(type_, tuples, before, after):
 
         # Name mangle so debugging is easier.
         Test.__module__ = type_.__module__
-        Test.__qualname__ = 'BT<{}>'.format(getattr(type_, '__name__', getattr(type_, '_name', '')))
+        Test.__qualname__ = 'BT<{0}>'.format(getattr(type_, '__name__', getattr(type_, '_name', '')))
 
         base = obj = Test
-        for t in tuples[before:]:
-            obj = obj[t]
+        for tuple_ in tuples[before:]:
+            obj = obj[tuple_]
 
     return base, obj, not after or len(tuples) < before, len(tuples) in {0, before}
 
@@ -71,10 +71,13 @@ def _build_tests(type_, t_args, args, start_, stop_, obj, fn):
     if len(t_args) != len(args):
         raise ValueError('Both arguments have to be the same length.')
 
-    for t in _find_all_combinations(start_, stop_+1, len(t_args), fn=fn):
-        tuples = list(_build_tuples(t, t_args, args, stop_))
+    for tuple_ in _find_all_combinations(start_, stop_ + 1, len(t_args), fn=fn):
+        tuples = list(_build_tuples(tuple_, t_args, args, stop_))
         start, stop = (obj, stop_) if len(tuples) >= obj and stop_ > obj else (0, min(obj, stop_))
-        args_ = _build_args(t, t_args, args, start, stop)
+        args_ = _build_args(tuple_, t_args, args, start, stop)
         # ClassVar doesn't work with tuples
         tuples = [t[0] if len(t) == 1 else t for t in tuples]
-        yield _build_type(type_, tuples, obj, stop_ > obj) + (args_, tuple(a for a in args_ if isinstance(a, typing.TypeVar)))
+        yield (
+            _build_type(type_, tuples, obj, stop_ > obj)
+            + (args_, tuple(a for a in args_ if isinstance(a, typing.TypeVar)))
+        )

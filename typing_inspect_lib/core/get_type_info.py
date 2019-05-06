@@ -1,10 +1,9 @@
 import collections
 
-from .helpers.typing_ import ClassVar
-
-from .get_typing import get_typing
 from .get_args import _get_args
 from .get_parameters import _get_parameters
+from .get_typing import get_typing
+from .helpers.typing_ import ClassVar
 
 
 class _TypeInfo(collections.namedtuple('TypeInfo', ['typing', 'class_', 'args', 'parameters'])):

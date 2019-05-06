@@ -1,5 +1,5 @@
-import sys
 import itertools
+import sys
 
 __all__ = [
     'VERSION',
@@ -9,7 +9,7 @@ __all__ = [
     'safe_dict_get',
     'safe_dict_contains',
     'safe_getattr_tuple',
-    'pairwise'
+    'pairwise',
 ]
 
 VERSION = sys.version_info[:3]
@@ -45,7 +45,7 @@ def safe_getattr_tuple(type_, key):
         return ()
 
 
-def pairwise(it):
-    a, b = itertools.tee(it)
+def pairwise(it):  # pylint: disable=invalid-name
+    a, b = itertools.tee(it)  # pylint: disable=invalid-name
     next(b, None)
     return zip(a, b)

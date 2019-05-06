@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 from setuptools import setup
 
-version = '0.0.1'
-description = 'Type inspections for Python'
-long_description = ''''''
+VERSION = '0.0.1'
+DESCRIPTION = 'Type inspections for Python'
+LONG_DESCRIPTION = ''''''
 
-classifiers = [
+CLASSIFIERS = [
     'Development Status :: 3 - Alpha',
     'Environment :: Console',
     'Intended Audience :: Developers',
@@ -21,13 +21,13 @@ classifiers = [
     'Topic :: Software Development',
 ]
 
-install_requires = [
+INSTALL_REQUIRES = [
     'typing >= 3.6.1;python_version<"3.5"'
 ]
 
-test_requires = []
+TEST_REQUIRES = []
 
-extra_requires = {
+EXTRA_REQUIRES = {
     'extensions': [
         'typing_extensions',
     ]
@@ -35,9 +35,9 @@ extra_requires = {
 
 setup(
     name='typing_inspect_lib',
-    version=version,
-    description=description,
-    long_description=long_description,
+    version=VERSION,
+    description=DESCRIPTION,
+    long_description=LONG_DESCRIPTION,
     author='Peilonrayz',
     author_email='peilonrayz@gmail.com',
     url='https://github.com/Peilonrayz/typing_inspect_lib',
@@ -46,8 +46,9 @@ setup(
              'checker typehints typehinting typechecking inspect '
              'reflection introspection',
     py_modules=['typing_inspect'],
-    classifiers=classifiers,
-    install_requires=install_requires,
-    tests_require=test_requires,
-    extras_require=extra_requires,
+    classifiers=CLASSIFIERS,
+    install_requires=INSTALL_REQUIRES,
+    tests_require=TEST_REQUIRES,
+    extras_require=EXTRA_REQUIRES,
+    zip_safe=False  # todo: check if this package is zip-safe
 )

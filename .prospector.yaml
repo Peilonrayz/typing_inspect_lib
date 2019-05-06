@@ -1,0 +1,21 @@
+strictness: veryhigh
+
+ignore-patterns:
+  - (^|/)venv
+
+pep8:
+  options:
+    max-line-length: 120
+
+pyroma:
+  run: true
+  disable:
+    - PYR06
+
+pylint:
+  options:
+    max-line-length: 120
+  disable:
+    - protected-access
+    - no-else-return
+    - unused-argument
