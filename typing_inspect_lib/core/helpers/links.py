@@ -4,6 +4,11 @@ import operator
 import os.path
 import typing
 
+try:
+    import typing_extensions  # noqa: F401 This is used by _read_globals
+except ImportError:
+    pass
+
 from . import abc
 from . import typing_
 from .helpers import PY350_2, PY_35, PY_OLD, VERSION

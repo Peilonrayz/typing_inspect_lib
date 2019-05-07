@@ -7,7 +7,3 @@ verify_ssl = true
 
 [packages]
 typing = "*"
-prospector = {extras = ["with_everything"],version = "*"}
-graphtimer = "*"
-numpy = "*"
-matplotlib = "*"
