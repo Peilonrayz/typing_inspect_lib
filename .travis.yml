@@ -32,6 +32,12 @@ matrix:
     - python: 3.7-dev
       env: TOXENV=unit-py37
       dist: xenial
+    - python: 3.8-dev
+      env: TOXENV=unit-py38
+      dist: xenial
+    - python: nightly
+      env: TOXENV=unit-pynightly
+      dist: xenial
 
     - python: 2.7
       env: TOXENV=unit-py27-te
@@ -57,15 +63,26 @@ matrix:
     - python: 3.7-dev
       env: TOXENV=unit-py37-te
       dist: xenial
+    - python: 3.8-dev
+      env: TOXENV=unit-py38-te
+      dist: xenial
+    - python: nightly
+      env: TOXENV=unit-pynightly-te
+      dist: xenial
   allow_failures:
     - python: 3.8-dev
       env: TOXENV=unit-py38
-    - python: 3.8-dev
-      env: TOXENV=unit-py38-te
+      dist: xenial
     - python: nightly
       env: TOXENV=unit-pynightly
+      dist: xenial
+
+    - python: 3.8-dev
+      env: TOXENV=unit-py38-te
+      dist: xenial
     - python: nightly
       env: TOXENV=unit-pynightly-te
+      dist: xenial
 
 install:
   - pip install tox
