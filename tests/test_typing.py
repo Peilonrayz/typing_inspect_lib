@@ -41,10 +41,6 @@ PY36 = VERSION[:2] == (3, 6)
 _STOP = 3 if PY36 or VERSION == (3, 5, 3) else 4
 
 
-# TODO: remove
-raise Exception(sys.version_info)
-
-
 class Types:
     LITERAL = object()
     VAR_TYPE = object()

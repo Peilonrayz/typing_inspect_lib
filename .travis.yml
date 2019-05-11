@@ -33,6 +33,31 @@ matrix:
       env: TOXENV=unit-py37
       dist: xenial
 
+    - python: 2.7
+      env: TOXENV=unit-py27-te
+    - python: 3.4
+      env: TOXENV=unit-py34-te
+    - python: 3.5.0
+      env: TOXENV=unit-py35-te
+    - python: 3.5.1
+      env: TOXENV=unit-py35-te
+    - python: 3.5.2
+      env: TOXENV=unit-py35-te
+    - python: 3.5.3
+      env: TOXENV=unit-py35-te
+    - python: 3.5-dev
+      env: TOXENV=unit-py35-te
+    - python: 3.6.0
+      env: TOXENV=unit-py36-te
+    - python: 3.6-dev
+      env: TOXENV=unit-py36-te
+    - python: 3.7.0
+      env: TOXENV=unit-py37-te
+      dist: xenial
+    - python: 3.7-dev
+      env: TOXENV=unit-py37-te
+      dist: xenial
+
 install:
   - pip install tox
 
