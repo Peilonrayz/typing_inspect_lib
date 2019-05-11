@@ -604,10 +604,10 @@ class CollectionTestCase(BaseTestCase):
         )
 
     def test_named_tuple(self):
-        TestTuple = typing.NamedTuple(
+        TestTuple = typing.NamedTuple(  # noqa: N806
             'TestTuple',
             [('key', TKey), ('value', TValue)]
-        )  # noqa: N806
+        )
         self.class_test(
             typing.NamedTuple,
             typing.NamedTuple,

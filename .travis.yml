@@ -2,10 +2,7 @@ language: python
 matrix:
   include:
     - python: 3.7
-      env: TOXENV=flake8
-      dist: xenial
-    - python: 3.7
-      env: TOXENV=prospector
+      env: TOXENV=check
       dist: xenial
 
     - python: 2.7
