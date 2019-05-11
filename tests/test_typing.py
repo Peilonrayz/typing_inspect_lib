@@ -3,7 +3,6 @@ import sys
 import textwrap
 import typing
 from operator import eq, ge
-from typing import KT, T, T_co, T_contra, VT, VT_co, V_co
 from unittest import TestCase, skipIf
 
 try:
@@ -13,20 +12,13 @@ except ImportError:
 else:
     _HAS_TE = True
 
-try:
-    from typing import CT_co
-except ImportError:
-    CT_co = typing.TypeVar('CT_co', bound=type, covariant=True)
-
-try:
-    from typing import CT
-except ImportError:
-    CT = typing.TypeVar('CT_co', bound=type, covariant=True)
-
 from typing_inspect_lib.core.helpers import abc as _abc
 
 from .helpers import types_
 from .helpers.build_types import _build_tests
+from .helpers.type_vars import (
+    CT, CT_co, CT_te, KT, T, T_co, T_contra, VT, VT_co, V_co
+)
 
 TKey = typing.TypeVar('TKey')
 TValue = typing.TypeVar('TValue')
@@ -717,11 +709,12 @@ class ExtensionsTestCase(BaseTestCase):
             type,
             [TValue],
             [int],
-            [CT_co]
+            [CT] if VERSION != (3, 5, 2) else [CT_te]  # TODO: check
         )
 
     # ABCs
     def test_context_manager(self):
+        print(T_co)
         self.class_test(
             typing_extensions.ContextManager,
             typing_extensions.ContextManager,
