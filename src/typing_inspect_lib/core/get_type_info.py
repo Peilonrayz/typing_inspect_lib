@@ -6,7 +6,12 @@ from .get_typing import get_typing
 from .helpers.typing_ import ClassVar
 
 
-class _TypeInfo(collections.namedtuple('TypeInfo', ['typing', 'class_', 'args', 'parameters'])):
+class _TypeInfo(
+        collections.namedtuple(
+            'TypeInfo',
+            ['typing', 'class_', 'args', 'parameters']
+        )
+):
     def __eq__(self, other):
         if not isinstance(other, _TypeInfo):
             return False

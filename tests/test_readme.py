@@ -1,6 +1,8 @@
 import sys
 import typing
-from typing import Container, Generic, Iterable, Mapping, Reversible, Sequence, Sized, TypeVar, Union
+from typing import (
+    Container, Generic, Iterable, Mapping, Reversible, Sequence, Sized, TypeVar, Union
+)
 from unittest import TestCase, skipIf
 
 try:
@@ -8,7 +10,10 @@ try:
 except ImportError:
     import collections as abc
 
-from typing_inspect_lib import get_args, get_bases, get_mro, get_mro_orig, get_parameters, get_type_var_info, get_typing
+from typing_inspect_lib import (
+    get_args, get_bases, get_mro, get_mro_orig, get_parameters, get_type_var_info,
+    get_typing
+)
 
 VERSION = sys.version_info[:3]
 
@@ -39,7 +44,10 @@ class SpecialTestCase(TestCase):
         TExample = TypeVar('TExample', bound=int)  # noqa: N806
         t_example = get_type_var_info(TExample)
 
-        self.assertEqual(('TExample', int, False, False), t_example)
+        self.assertEqual(
+            ('TExample', (), int, False, False),
+            t_example
+        )
         self.assertEqual('TExample', t_example.name)
         self.assertEqual(int, t_example.bound)
         self.assertFalse(t_example.covariant)
@@ -48,7 +56,10 @@ class SpecialTestCase(TestCase):
         # Using this with typing objects
         self.assertNotEqual((), get_parameters(Mapping))
         mapping_parameters = tuple(get_type_var_info(p) for p in get_parameters(Mapping))
-        self.assertEqual((('KT', None, False, False), ('VT_co', None, True, False)), mapping_parameters)
+        self.assertEqual(
+            (('KT', (), None, False, False), ('VT_co', (), None, True, False)),
+            mapping_parameters
+        )
 
     def test_bases(self):
         if VERSION[:2] == (3, 5) and VERSION <= (3, 5, 2):
@@ -170,7 +181,8 @@ class SpecialTestCase(TestCase):
         self.assertEqual(get_mro_orig(Mapping[int, str]), mro)
 
     # TODO: remove the need to skip this in 2.7
-    @skipIf(VERSION < (3, 0, 0), 'Python 2.7 seems to swap Union values, looking to find a fix')
+    @skipIf(VERSION < (3, 0, 0),
+            'Python 2.7 seems to swap Union values, looking to find a fix')
     def test_mro_orig_custom(self):
         class T(Mapping[int, str], Sequence[str]):
             pass

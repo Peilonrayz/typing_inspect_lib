@@ -54,7 +54,9 @@ def _build_type(type_, tuples, before, after):
 
         # Name mangle so debugging is easier.
         Test.__module__ = type_.__module__
-        Test.__qualname__ = 'BT<{0}>'.format(getattr(type_, '__name__', getattr(type_, '_name', '')))
+        Test.__qualname__ = 'BT<{0}>'.format(
+            getattr(type_, '__name__', getattr(type_, '_name', ''))
+        )
 
         base = obj = Test
         for tuple_ in tuples[before:]:
@@ -73,7 +75,11 @@ def _build_tests(type_, t_args, args, start_, stop_, obj, fn):
 
     for tuple_ in _find_all_combinations(start_, stop_ + 1, len(t_args), fn=fn):
         tuples = list(_build_tuples(tuple_, t_args, args, stop_))
-        start, stop = (obj, stop_) if len(tuples) >= obj and stop_ > obj else (0, min(obj, stop_))
+        start, stop = (
+            (obj, stop_)
+            if len(tuples) >= obj and stop_ > obj else
+            (0, min(obj, stop_))
+        )
         args_ = _build_args(tuple_, t_args, args, start, stop)
         # ClassVar doesn't work with tuples
         tuples = [t[0] if len(t) == 1 else t for t in tuples]

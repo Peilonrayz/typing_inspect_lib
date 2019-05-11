@@ -91,4 +91,5 @@ else:
     _AsyncContextManager = getattr(typing, 'AsyncContextManager', None)
 
 AbstractContextManager = getattr(contextlib, 'AbstractContextManager', _ContextManager)
-AbstractAsyncContextManager = getattr(contextlib, 'AbstractAsyncContextManager', _AsyncContextManager)
+AbstractAsyncContextManager = getattr(contextlib, 'AbstractAsyncContextManager',
+                                      _AsyncContextManager)

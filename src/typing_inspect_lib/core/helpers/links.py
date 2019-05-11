@@ -63,7 +63,10 @@ class Types(object):  # pylint: disable=useless-object-inheritance, too-few-publ
 
     @staticmethod
     def _update_class_type(old_key, new_key):
-        link_types = SPECIAL_OBJECTS_WRAPPED.class_types, SPECIAL_OBJECTS_WRAPPED.class_to_typing
+        link_types = (
+            SPECIAL_OBJECTS_WRAPPED.class_types,
+            SPECIAL_OBJECTS_WRAPPED.class_to_typing
+        )
         for link_type in link_types:
             try:
                 value = link_type[old_key]
@@ -103,7 +106,11 @@ LITERAL_TYPES = _literal_to_link_types(
         bytes,
         type(None),
     ]
-    + ([unicode] if VERSION < (3, 0, 0) else [])  # noqa: F821 pylint: disable=undefined-variable
+    + (
+        [unicode]  # noqa: F821, pylint: disable=undefined-variable
+        if VERSION < (3, 0, 0) else
+        []
+    )
     + _read_globals(_LINKS['literal']),
 )
 
@@ -116,8 +123,20 @@ SPECIAL_OBJECTS_WRAPPED.update_class_types([
         SPECIAL_OBJECTS_WRAPPED.typing_to_class[typing.Callable],
         (typing.CallableMeta if PY_OLD else collections.abc.Callable),
     ),
-    (typing_.ClassVar, (typing_.ClassVarMeta if PY350_2 else typing_._ClassVar)),
-    (typing.Optional, (typing.OptionalMeta if PY350_2 else typing.Optional)),
-    (SPECIAL_OBJECTS_WRAPPED.typing_to_class[typing.Tuple], (typing.TupleMeta if PY_OLD else tuple)),
-    (typing.Union, (typing.UnionMeta if PY350_2 else typing_._Union)),
+    (
+        typing_.ClassVar,
+        (typing_.ClassVarMeta if PY350_2 else typing_._ClassVar)
+    ),
+    (
+        typing.Optional,
+        (typing.OptionalMeta if PY350_2 else typing.Optional)
+    ),
+    (
+        SPECIAL_OBJECTS_WRAPPED.typing_to_class[typing.Tuple],
+        (typing.TupleMeta if PY_OLD else tuple)
+    ),
+    (
+        typing.Union,
+        (typing.UnionMeta if PY350_2 else typing_._Union)
+    ),
 ])

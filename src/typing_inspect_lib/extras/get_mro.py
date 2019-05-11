@@ -1,5 +1,8 @@
 from ..core import get_typing
-from ..core.helpers import PY_35, PY_OLD, TYPING_OBJECTS, VERSION, safe_dict_contains, safe_dict_get, safe_getattr_tuple
+from ..core.helpers import (
+    PY_35, PY_OLD, TYPING_OBJECTS, VERSION, safe_dict_contains, safe_dict_get,
+    safe_getattr_tuple
+)
 
 
 def _get_mro_conv_dedupe(mro):
@@ -39,7 +42,8 @@ def get_mro(type_):
     """
     Gets the mro of the type. Returning them as class types.
 
-    Builtin types are converted to their class type to get the MRO and so `Generic` is missing.
+    Builtin types are converted to their class type to get the MRO
+    and so `Generic` is missing.
 
     Example:
 

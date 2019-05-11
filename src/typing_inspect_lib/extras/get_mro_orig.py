@@ -4,7 +4,9 @@ from .get_bases import _BaseObj
 from .get_mro import get_mro
 from .get_parents import get_parents
 from ..core import get_args, get_type_info
-from ..core.helpers import PY_35, TYPING_OBJECTS, VERSION, pairwise, safe_dict_contains, safe_dict_get
+from ..core.helpers import (
+    PY_35, TYPING_OBJECTS, VERSION, pairwise, safe_dict_contains, safe_dict_get
+)
 
 
 def _inner_set(values):
@@ -31,7 +33,8 @@ def get_mro_orig(type_):
     """
     Gets the mro of the type. Returning them as typing types, class types and orig types.
 
-    Builtin types are converted to their class type to get the MRO and so `Generic` is missing.
+    Builtin types are converted to their class type to get the MRO
+    and so `Generic` is missing.
     """
     parents = {}
     for parent in get_parents(type_):
@@ -40,7 +43,11 @@ def get_mro_orig(type_):
     mro = ()
     for class_ in get_mro(type_):
         if class_ not in parents:
-            mro += (_BaseObj(safe_dict_get(TYPING_OBJECTS.class_to_typing, class_) or class_, class_, None),)
+            mro += (_BaseObj(
+                safe_dict_get(TYPING_OBJECTS.class_to_typing, class_) or class_,
+                class_,
+                None
+            ),)
             continue
 
         classes = parents.pop(class_)

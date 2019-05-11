@@ -4,8 +4,8 @@ from .helpers import PY_OLD, typing_
 
 # TODO: reduce complexity
 if PY_OLD:  # noqa: MC0001
-    def get_generic_type(type_):  # pylint: disable=too-many-return-statements
-        """Get the generic type of the type provided. If the type is a generic unwrapped type."""
+    def get_base_type(type_):  # pylint: disable=too-many-return-statements
+        """Get the generic type and if it is unwrapped."""
         ret_type = None
         if isinstance(type_, typing._ProtocolMeta):
             ret_type = typing_.BaseProtocol
@@ -21,7 +21,7 @@ if PY_OLD:  # noqa: MC0001
                 return ret_type, False
         return None, None
 else:
-    def get_generic_type(type_):  # pylint: disable=too-many-return-statements
+    def get_base_type(type_):  # pylint: disable=too-many-return-statements
         if isinstance(type_, typing._ProtocolMeta):
             return typing_.BaseProtocol, True
         if isinstance(type_, typing_.ProtocolMeta):

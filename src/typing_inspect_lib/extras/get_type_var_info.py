@@ -2,7 +2,10 @@ import collections
 import typing
 
 
-_TypeVarInfo = collections.namedtuple('TypeVarInfo', ['name', 'bound', 'covariant', 'contravariant'])
+_TypeVarInfo = collections.namedtuple(
+    'TypeVarInfo',
+    ['name', 'constraints', 'bound', 'covariant', 'contravariant']
+)
 
 
 def get_type_var_info(type_var):
@@ -24,6 +27,7 @@ def get_type_var_info(type_var):
         raise TypeError('get_type_var_info must be passed a TypeVar')
     return _TypeVarInfo(
         getattr(type_var, '__name__', None),
+        getattr(type_var, '__constraints__', None),
         getattr(type_var, '__bound__', None),
         getattr(type_var, '__covariant__', None),
         getattr(type_var, '__contravariant__', None),

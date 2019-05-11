@@ -2,7 +2,9 @@ import types
 import typing
 
 from .get_origins import _get_last_origin
-from .helpers import LITERAL_TYPES, PY_OLD, SPECIAL_OBJECTS_WRAPPED, TYPING_OBJECTS, safe_dict_get, typing_
+from .helpers import (
+    LITERAL_TYPES, PY_OLD, SPECIAL_OBJECTS_WRAPPED, TYPING_OBJECTS, safe_dict_get, typing_
+)
 
 
 if PY_OLD:
@@ -10,8 +12,9 @@ if PY_OLD:
         """
         Returns the typing type and class type of a wrapped or unwrapped type.
 
-        This function doesn't work special types, these require another function to extract the information correctly.
-        Builtin {literal types, class types, typing types} all are handled before this function runs.
+        This function doesn't work special types, these require another function to
+        extract the information correctly. Builtin {literal types, class types,
+        typing types} all are handled before this function runs.
 
         Example:
 

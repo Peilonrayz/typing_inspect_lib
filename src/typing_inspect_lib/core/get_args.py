@@ -1,13 +1,17 @@
 import typing
 
-from .get_generic_type import get_generic_type
+from .get_base_type import get_base_type
 from .get_origins import _get_origins
 from .get_typing import get_typing
-from .helpers import PY_35, PY_OLD, SPECIAL_OBJECTS, VERSION, safe_dict_contains, safe_getattr_tuple, typing_
+from .helpers import (
+    PY_35, PY_OLD, SPECIAL_OBJECTS, VERSION, safe_dict_contains, safe_getattr_tuple,
+    typing_
+)
 
 # TODO: reduce complexity
 if PY_35 and VERSION <= (3, 5, 2):  # noqa: MC0001
-    def _handle_special_type(type_, t_typing):  # pylint: disable=too-many-return-statements
+    # pylint: disable=too-many-return-statements
+    def _handle_special_type(type_, t_typing):
         """Get args for types that can't be handled via normal means."""
         if safe_dict_contains(SPECIAL_OBJECTS.typing_types, t_typing):
             if t_typing is typing_.ClassVar:
@@ -67,7 +71,7 @@ if PY_OLD:
     def _get_args(type_, t_typing=SENTINEL):
         if type(type_) is typing._TypeAlias:  # pylint: disable=unidiomatic-typecheck
             return (type_.type_var,)
-        _, base = get_generic_type(type_)
+        _, base = get_base_type(type_)
         if base:
             return ()
         if t_typing is SENTINEL:
@@ -81,7 +85,7 @@ if PY_OLD:
         return ()
 else:
     def _get_args(type_, t_typing=SENTINEL):  # pylint: disable=unused-argument
-        _, base = get_generic_type(type_)
+        _, base = get_base_type(type_)
         if base:
             return ()
         return getattr(type_, '__args__', None) or ()

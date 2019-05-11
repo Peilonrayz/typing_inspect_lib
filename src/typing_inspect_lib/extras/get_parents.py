@@ -12,7 +12,7 @@ def _get_parents(type_):
 
 
 def get_parents(type_):
-    """Gets the parents of the types, returns the typing type, class type and orig type."""
+    """Get the parents of the types, returns the typing type, class type and orig type."""
     type_info = get_type_info(type_)
     if type_info is None:
         typing_ = safe_dict_get(TYPING_OBJECTS.class_to_typing, type_, type_)

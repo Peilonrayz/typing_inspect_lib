@@ -2,7 +2,10 @@ import collections
 
 from ..core import get_parameters, get_type_info, get_typing
 from ..core.get_type_info import _TypeInfo
-from ..core.helpers import PY_35, PY_OLD, TYPING_OBJECTS, VERSION, safe_dict_contains, safe_dict_get, safe_getattr_tuple
+from ..core.helpers import (
+    PY_35, PY_OLD, TYPING_OBJECTS, VERSION, safe_dict_contains, safe_dict_get,
+    safe_getattr_tuple
+)
 
 _BaseObj = collections.namedtuple('BaseObj', ['typing', 'class_', 'orig'])
 
@@ -102,7 +105,10 @@ else:
 
         left_over = [i for lst in orig_bases.values() for i in lst]
         if left_over:
-            raise ValueError('Did not consume all orig_bases for the class provided. {0}'.format(left_over))
+            raise ValueError(
+                'Did not consume all orig_bases for the class provided. {0}'
+                .format(left_over)
+            )
         return bases
 
 
@@ -114,12 +120,17 @@ def get_bases(type_):
 
         get_bases(Mapping) == ((typing.Collection, abc.Collection, None),)
         get_bases(abc.Mapping) == ((typing.Collection, abc.Collection, None),)
-        get_bases(Mapping[int, int]) == ((typing.Collection, abc.Collection, typing.Collection[int]),)
+        get_bases(Mapping[int, int]) == (
+            (typing.Collection, abc.Collection, typing.Collection[int]),
+        )
     """
     type_info = get_type_info(type_)
     if type_info is None:
         return _bases(type_)
-    if not type_info.args or not safe_dict_contains(TYPING_OBJECTS.class_types, type_info.class_):
+    if (
+        not type_info.args
+        or not safe_dict_contains(TYPING_OBJECTS.class_types, type_info.class_)
+    ):
         return _bases(type_info.class_)
     bases = ()
     for base in _bases(type_info.class_):
@@ -128,7 +139,11 @@ def get_bases(type_):
         else:
             parameters = get_parameters(base.typing)
             if parameters:
-                bases += (_BaseObj(base.typing, base.class_, base.typing[type_info.args[:len(parameters)]]),)
+                bases += (_BaseObj(
+                    base.typing,
+                    base.class_,
+                    base.typing[type_info.args[:len(parameters)]]
+                ),)
             else:
                 bases += (base,)
     return bases
