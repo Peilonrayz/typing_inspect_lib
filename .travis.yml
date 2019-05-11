@@ -3,8 +3,10 @@ matrix:
   include:
     - python: 3.7
       env: TOXENV=flake8
+      dist: xenial
     - python: 3.7
       env: TOXENV=prospector
+      dist: xenial
 
     - python: 2.7
       env: TOXENV=unit-py27
@@ -32,12 +34,8 @@ matrix:
       dist: xenial
 
 install:
-  - set -e
-  - set -u
   - pip install tox
 
 script:
-  - set -e
-  - set -u
   - export TOX_SKIP_MISSING_INTERPRETERS="False"
   - tox
