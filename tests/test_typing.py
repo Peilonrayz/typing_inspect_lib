@@ -709,12 +709,11 @@ class ExtensionsTestCase(BaseTestCase):
             type,
             [TValue],
             [int],
-            [CT] if VERSION != (3, 5, 2) else [CT_te]  # TODO: check
+            [CT_te]
         )
 
     # ABCs
     def test_context_manager(self):
-        print(T_co)
         self.class_test(
             typing_extensions.ContextManager,
             typing_extensions.ContextManager,

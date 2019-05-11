@@ -1,3 +1,4 @@
+import sys
 import typing
 from typing import KT, T, T_co, T_contra, VT, VT_co, V_co
 
@@ -11,10 +12,7 @@ try:
 except ImportError:
     CT = typing.TypeVar('CT_co', bound=type, covariant=True)
 
-try:
-    from typing import CT as CT_te
-except ImportError:
-    CT_te = typing.TypeVar('CT', bound=type)
+CT_te = CT if sys.version_info[:3] != (3, 5, 2) else typing.TypeVar('CT', bound=type)
 
 
 __all__ = [
