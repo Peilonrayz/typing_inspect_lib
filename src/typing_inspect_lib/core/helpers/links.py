@@ -11,6 +11,7 @@ except ImportError:
 
 from . import abc
 from . import typing_
+from . import re
 from .helpers import PY350_2, PY_35, PY_OLD, VERSION
 
 __all__ = [
@@ -27,6 +28,7 @@ with open(os.path.join(_FILE_DIR, 'links.json')) as f:
     _LINKS = json.load(f)
 
 
+# TODO: move down to edge-cases
 # Python 3.5 class type incompatibilities
 _OLD_CLASS = {
     (typing.Dict, abc.MutableMapping): dict,
@@ -50,22 +52,84 @@ else:
         return getattr(t_typing, '__origin__', None) or t_typing
 
 
+class _TypesBoth(abc.MutableMapping):
+    def __init__(self, values, both):
+        self._values = values
+        self._both = both
+
+    def __getitem__(self, key):
+        value = self._values[key]
+        return self._both(self._values._inv[value], value)
+
+    def __setitem__(self, key, values):
+        if key not in values:
+            raise ValueError('Key must be in value')
+        if len(values) != 2:
+            raise ValueError('Value must have a length of two')
+        self._values[key] = [i for i in values if i != key][0]
+
+    def __delitem__(self, v):
+        self._values.__delitem__(v)
+
+    def __len__(self):
+        return len(self._values)
+
+    def __iter__(self):
+        return iter(self._values)
+
+
+class _Types(abc.MutableMapping):
+    def __init__(self, both):
+        self._values = {}
+        self.both = _TypesBoth(self, both)
+        # Should be set to the inverse
+        self._inv = {}
+
+    def __getitem__(self, key):
+        return self._values[key]
+
+    def __setitem__(self, key, value):
+        old_value = self._values.get(key, _SENTINEL)
+        if old_value is not _SENTINEL:
+            self._inv.pop(old_value)
+        self._values[key] = value
+        self._inv._values[value] = key
+
+    def __delitem__(self, v):
+        self._values.__delitem__(v)
+
+    def __len__(self):
+        return len(self._values)
+
+    def __iter__(self):
+        return iter(self._values)
+
+
 class Types(object):  # pylint: disable=useless-object-inheritance, too-few-public-methods
     def __init__(self, types):
-        typings = [
-            (t, _from_typing_to_class(t))
-            for t in types
-        ]
-        self.class_types = {c: (t, c) for t, c in typings}
-        self.class_to_typing = {c: t for t, c in typings}
-        self.typing_types = {t: (t, c) for t, c in typings}
-        self.typing_to_class = {t: c for t, c in typings}
+        self.typing = _Types(lambda a, b: (a, b))
+        self.class_ = _Types(lambda a, b: (b, a))
+        self.typing._inv = self.class_
+        self.class_._inv = self.typing
+
+        for t in types:
+            self.typing[t] = _from_typing_to_class(t)
+
+        self.class_types = self.class_.both
+        self.class_to_typing = self.class_
+        self.typing_types = self.typing.both
+        self.typing_to_class = self.typing
+        self._build_class_types()
+
+    def _build_class_types(self):
+        # ClassVar only works correctly with this...
+        self.class_types = {c: (t, c) for c, t in self.class_.items()}
 
     @staticmethod
     def _update_class_type(old_key, new_key):
         link_types = (
             SPECIAL_OBJECTS_WRAPPED.class_types,
-            SPECIAL_OBJECTS_WRAPPED.class_to_typing
+            # SPECIAL_OBJECTS_WRAPPED.class_to_typing,
         )
         for link_type in link_types:
             try:
@@ -118,6 +182,13 @@ TYPING_OBJECTS = Types(_read_globals(_LINKS['typing']))
 SPECIAL_OBJECTS = Types(_read_globals(_LINKS['special']))
 SPECIAL_OBJECTS_WRAPPED = Types(_read_globals(_LINKS['special wrapped']))
 
+# Edge cases
+
+TYPING_OBJECTS.typing[typing.Pattern] = re.Pattern
+TYPING_OBJECTS.typing[typing.Match] = re.Match
+TYPING_OBJECTS._build_class_types()
+
+# TODO: Convert to easier to understand code
 SPECIAL_OBJECTS_WRAPPED.update_class_types([
     (
         SPECIAL_OBJECTS_WRAPPED.typing_to_class[typing.Callable],

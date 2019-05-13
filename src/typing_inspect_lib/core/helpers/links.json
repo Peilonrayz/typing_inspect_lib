@@ -72,7 +72,9 @@
     "typing_extensions.Deque",
     "typing_extensions.DefaultDict",
     "typing.NewType",
-    "typing_extensions.NewType"
+    "typing_extensions.NewType",
+    "typing.Pattern",
+    "typing.Match"
   ],
   "special": [
     "typing.Callable",

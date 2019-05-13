@@ -12,8 +12,12 @@ try:
 except ImportError:
     CT = typing.TypeVar('CT_co', bound=type, covariant=True)
 
-CT_te = CT if sys.version_info[:3] != (3, 5, 2) else typing.TypeVar('CT', bound=type)
+try:
+    from typing import CT as _CT_te
+except ImportError:
+    _CT_te = typing.TypeVar('CT', bound=type)
 
+CT_te = CT if sys.version_info[:3] != (3, 5, 2) else _CT_te
 
 __all__ = [
     'CT',

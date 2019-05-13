@@ -13,6 +13,7 @@ else:
     _HAS_TE = True
 
 from typing_inspect_lib.core.helpers import abc as _abc
+from typing_inspect_lib.core.helpers import re
 
 from .helpers import types_
 from .helpers.build_types import _build_tests
@@ -55,7 +56,10 @@ class BaseTestCase(TestCase):
         args = tuple(types_.build_types(a) for a in args or [])
         parameters = tuple(types_.build_types(p) for p in parameters or [])
         type_info = types_.Type(typing_, class_, args, parameters)
-        self.assertEqual(type_info, types_.build_types(type_))
+        if type_ is typing.Pattern:
+            print(type_info)
+            print(types_.build_types(type_))
+        self.assertEqual(types_.build_types(type_), type_info)
 
     def class_test(self, type_, typing_, class_, t_args=None, args=None, parameters=None,
                    start=0, stop=_STOP, obj=2, fn=ge):
@@ -73,7 +77,7 @@ class BaseTestCase(TestCase):
                 type_info = types_.Type(typing_, class_, args, params)
             else:
                 type_info = types_.Type(base, base, args, params)
-            self.assertEqual(type_info, types_.build_types(obj))
+            self.assertEqual(types_.build_types(obj), type_info)
 
 
 class SpecialTestCase(BaseTestCase):
@@ -659,6 +663,44 @@ class OneOffTestCase(BaseTestCase):
             'Text not in 3.5.[0,1]')
     def test_text(self):
         self.plain_test(typing.Text, Types.LITERAL)
+
+
+class ReTestCase(BaseTestCase):
+    def test_pattern(self):
+        if VERSION < (3, 7, 0):
+            self.plain_class_test(
+                typing.Pattern,
+                typing.Pattern,
+                re.Pattern,
+                [typing.AnyStr],
+                []
+            )
+        else:
+            self.plain_class_test(
+                typing.Pattern,
+                typing.Pattern,
+                re.Pattern,
+                [],
+                [typing.AnyStr]
+            )
+
+    def test_match(self):
+        if VERSION < (3, 7, 0):
+            self.plain_class_test(
+                typing.Match,
+                typing.Match,
+                re.Match,
+                [typing.AnyStr],
+                []
+            )
+        else:
+            self.plain_class_test(
+                typing.Match,
+                typing.Match,
+                re.Match,
+                [],
+                [typing.AnyStr]
+            )
 
 
 @skipIf(not _HAS_TE, 'Typing extension test require it to be installed.')

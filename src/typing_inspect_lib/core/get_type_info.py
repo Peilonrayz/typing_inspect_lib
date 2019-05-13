@@ -3,7 +3,6 @@ import collections
 from .get_args import _get_args
 from .get_parameters import _get_parameters
 from .get_typing import get_typing
-from .helpers.typing_ import ClassVar
 
 
 class _TypeInfo(
@@ -15,16 +14,10 @@ class _TypeInfo(
     def __eq__(self, other):
         if not isinstance(other, _TypeInfo):
             return False
-        if self.typing is ClassVar:
-            if self.typing is not other.typing:
-                return False
-            if self.class_ is not other.class_:
-                return False
-        else:
-            if self.typing != other.typing:
-                return False
-            if self.class_ != other.class_:
-                return False
+        if not (self.typing is other.typing or self.typing == other.typing):
+            return False
+        if not (self.class_ is other.class_ or self.class_ == other.class_):
+            return False
         return self.args == other.args and self.parameters == other.parameters
 
 
