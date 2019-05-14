@@ -7,7 +7,7 @@ from .get_typing import get_typing
 
 _TypeInfo = collections.namedtuple(
     'TypeInfo',
-    ['typing', 'class_', 'args', 'parameters']
+    ['typing', 'class_', 'args', 'parameters'],
 )
 
 

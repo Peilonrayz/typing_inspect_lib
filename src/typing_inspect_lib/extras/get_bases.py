@@ -3,7 +3,7 @@ import collections
 from ..core import get_parameters, get_type_info, get_typing
 from ..core.get_type_info import _TypeInfo
 from ..core.helpers import (
-    PY_35, PY_OLD, VERSION, safe_getattr_tuple, is_typing
+    PY_35, PY_OLD, VERSION, is_typing, safe_getattr_tuple,
 )
 
 _BaseObj = collections.namedtuple('BaseObj', ['typing', 'class_', 'orig'])
@@ -107,7 +107,7 @@ else:
         if left_over:
             raise ValueError(
                 'Did not consume all orig_bases for the class provided. {0}'
-                .format(left_over)
+                .format(left_over),
             )
         return bases
 
@@ -142,7 +142,7 @@ def get_bases(type_):
                 bases += (_BaseObj(
                     base.typing,
                     base.class_,
-                    base.typing[type_info.args[:len(parameters)]]
+                    base.typing[type_info.args[:len(parameters)]],
                 ),)
             else:
                 bases += (base,)

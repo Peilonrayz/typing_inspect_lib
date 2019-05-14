@@ -1,7 +1,7 @@
 import sys
 import typing
 from typing import (
-    Container, Generic, Iterable, Mapping, Reversible, Sequence, Sized, TypeVar, Union
+    Container, Generic, Iterable, Mapping, Reversible, Sequence, Sized, TypeVar, Union,
 )
 from unittest import TestCase, skipIf
 
@@ -12,7 +12,7 @@ except ImportError:
 
 from typing_inspect_lib import (
     get_args, get_bases, get_mro, get_mro_orig, get_parameters, get_type_var_info,
-    get_typing
+    get_typing,
 )
 
 VERSION = sys.version_info[:3]
@@ -46,7 +46,7 @@ class SpecialTestCase(TestCase):
 
         self.assertEqual(
             ('TExample', (), int, False, False),
-            t_example
+            t_example,
         )
         self.assertEqual('TExample', t_example.name)
         self.assertEqual(int, t_example.bound)
@@ -58,7 +58,7 @@ class SpecialTestCase(TestCase):
         mapping_parameters = tuple(get_type_var_info(p) for p in get_parameters(Mapping))
         self.assertEqual(
             (('KT', (), None, False, False), ('VT_co', (), None, True, False)),
-            mapping_parameters
+            mapping_parameters,
         )
 
     def test_bases(self):

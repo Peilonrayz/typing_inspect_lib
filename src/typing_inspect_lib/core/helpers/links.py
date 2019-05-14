@@ -10,8 +10,8 @@ except ImportError:
     pass
 
 from . import abc
-from . import typing_
 from . import re
+from . import typing_
 from .helpers import PY350_2, PY_OLD, VERSION, safe_dict_get, safe_dict_get_both
 
 __all__ = [
@@ -53,8 +53,8 @@ class _Types(abc.MutableMapping):
         self._values[key] = value
         self._inv._values[value] = key
 
-    def __delitem__(self, v):
-        self._values.__delitem__(v)
+    def __delitem__(self, value):
+        self._values.__delitem__(value)
 
     def __len__(self):
         return len(self._values)
@@ -128,7 +128,7 @@ _CHANGES = [
     (typing.AbstractSet, abc.Set),
     (typing.MutableMapping, abc.MutableMapping),
     (typing.MutableSequence, abc.MutableSequence),
-    (typing.MutableSet, abc.MutableSet)
+    (typing.MutableSet, abc.MutableSet),
 ]
 for from_, to in _CHANGES:
     for mapping in (TYPING_OBJECTS, SPECIAL_OBJECTS, SPECIAL_OBJECTS_WRAPPED):

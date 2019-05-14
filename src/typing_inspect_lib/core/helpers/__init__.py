@@ -4,12 +4,12 @@ from . import abc
 from . import re
 from . import typing_
 from .helpers import (
-    PY350_2, PY_35, PY_OLD, VERSION, pairwise, safe_dict_contains, safe_dict_get,
-    safe_getattr_tuple, safe_dict_get_both
+    PY350_2, PY_35, PY_OLD, VERSION, pairwise, safe_dict_contains,
+    safe_dict_get, safe_dict_get_both, safe_getattr_tuple,
 )
 from .links import (
-    LITERAL_TYPES, TYPING_OBJECTS, is_typing,
-    is_special, get_special_wrapped
+    LITERAL_TYPES, TYPING_OBJECTS, get_special_wrapped, is_special,
+    is_typing,
 )
 
 __all__ = [

@@ -4,7 +4,7 @@ import typing
 
 _TypeVarInfo = collections.namedtuple(
     'TypeVarInfo',
-    ['name', 'constraints', 'bound', 'covariant', 'contravariant']
+    ['name', 'constraints', 'bound', 'covariant', 'contravariant'],
 )
 
 

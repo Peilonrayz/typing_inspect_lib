@@ -55,7 +55,7 @@ def _build_type(type_, tuples, before, after):
         # Name mangle so debugging is easier.
         Test.__module__ = type_.__module__
         Test.__qualname__ = 'BT<{0}>'.format(
-            getattr(type_, '__name__', getattr(type_, '_name', ''))
+            getattr(type_, '__name__', getattr(type_, '_name', '')),
         )
 
         base = obj = Test

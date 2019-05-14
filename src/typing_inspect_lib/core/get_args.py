@@ -4,7 +4,7 @@ from .get_base_type import get_base_type
 from .get_origins import _get_origins
 from .get_typing import get_typing
 from .helpers import (
-    PY_35, PY_OLD, VERSION, safe_getattr_tuple, typing_, is_special
+    PY_35, PY_OLD, VERSION, is_special, safe_getattr_tuple, typing_,
 )
 
 # TODO: reduce complexity

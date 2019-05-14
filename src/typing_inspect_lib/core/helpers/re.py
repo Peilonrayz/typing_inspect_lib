@@ -1,5 +1,5 @@
-import sre_compile
 import re
+import sre_compile  # noqa: I201
 
 # pylint: disable=invalid-name
 Pattern = getattr(re, 'Pattern', type(sre_compile.compile('', 0)))

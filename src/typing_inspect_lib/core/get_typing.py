@@ -3,8 +3,8 @@ import typing
 
 from .get_origins import _get_last_origin
 from .helpers import (
-    LITERAL_TYPES, PY_OLD, TYPING_OBJECTS, safe_dict_get,
-    typing_, safe_dict_get_both, get_special_wrapped
+    LITERAL_TYPES, PY_OLD, TYPING_OBJECTS, get_special_wrapped,
+    safe_dict_get, safe_dict_get_both, typing_,
 )
 
 

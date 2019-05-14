@@ -5,7 +5,7 @@ from .get_mro import get_mro
 from .get_parents import get_parents
 from ..core import get_args, get_type_info, get_typing
 from ..core.helpers import (
-    PY_35, VERSION, pairwise, is_typing
+    PY_35, VERSION, is_typing, pairwise,
 )
 
 

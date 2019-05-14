@@ -1,7 +1,7 @@
-from unittest import TestCase, skipIf
-import typing
-import sys
 import itertools
+import sys
+import typing
+from unittest import TestCase, skipIf
 
 try:
     from typing_extensions import Protocol
@@ -16,14 +16,14 @@ except ImportError:
     HAS_CLASS_VAR = False
 
 from typing_inspect_lib import get_type_info, get_type_var_info
-from typing_inspect_lib.core.helpers import typing_
-from typing_inspect_lib.core.helpers import abc
-from typing_inspect_lib.core.helpers import re
 from typing_inspect_lib.core.get_base_type import get_base_type
 from typing_inspect_lib.core.get_type_info import _TypeInfo
+from typing_inspect_lib.core.helpers import abc
+from typing_inspect_lib.core.helpers import re
 from typing_inspect_lib.core.helpers import (
-    safe_dict_get, safe_dict_get_both, safe_dict_contains, safe_getattr_tuple
+    safe_dict_contains, safe_dict_get, safe_dict_get_both, safe_getattr_tuple,
 )
+from typing_inspect_lib.core.helpers import typing_
 
 VERSION = sys.version_info[:3]
 
@@ -43,7 +43,7 @@ class BaseClassesTestCase(TestCase):
             self.assertEqual(
                 get_base_type(test),
                 (typing_.BaseProtocol, True),
-                msg=str(test)
+                msg=str(test),
             )
 
     @skipIf(not HAS_PROTOCOL, 'requires protocol from typing_extensions')
@@ -77,16 +77,16 @@ class BaseClassesTestCase(TestCase):
         if VERSION < (3, 6):
             self.assertEqual(
                 get_base_type(typing.Reversible),
-                (typing_.BaseProtocol, True)
+                (typing_.BaseProtocol, True),
             )
             self.assertEqual(
                 get_base_type(typing.Reversible[int]),
-                (typing_.BaseProtocol, False)
+                (typing_.BaseProtocol, False),
             )
         else:
             self.assertEqual(
                 get_base_type(typing.Reversible),
-                (typing.Generic, True)
+                (typing.Generic, True),
             )
 
 
@@ -163,5 +163,5 @@ class SafeHelpersTestCase(TestCase):
 
 class TypeVarInfoTestCase(TestCase):
     def test_raise(self):
-        with self.assertRaises(TypeError) as _:
+        with self.assertRaises(TypeError) as _:  # noqa: F841
             get_type_var_info(object())

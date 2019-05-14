@@ -18,7 +18,7 @@ from typing_inspect_lib.core.helpers import re
 from .helpers import types_
 from .helpers.build_types import _build_tests
 from .helpers.type_vars import (
-    CT, CT_co, CT_te, KT, T, T_co, T_contra, VT, VT_co, V_co
+    CT, CT_co, CT_te, KT, T, T_co, T_contra, VT, VT_co, V_co,
 )
 
 TKey = typing.TypeVar('TKey')
@@ -88,14 +88,14 @@ class SpecialTestCase(BaseTestCase):
             typing.Callable,
             typing.Callable,
             _abc.Callable,
-            []
+            [],
         )
         self.plain_class_test(
             typing.Callable[[TKey], TValue],
             typing.Callable,
             _abc.Callable,
             [TKey, TValue],
-            [TKey, TValue]
+            [TKey, TValue],
         )
 
     @skipIf(PY35 and VERSION <= (3, 5, 2),
@@ -105,14 +105,14 @@ class SpecialTestCase(BaseTestCase):
             typing.ClassVar,
             typing.ClassVar,
             typing.ClassVar,
-            []
+            [],
         )
         self.plain_class_test(
             typing.ClassVar[TValue],
             typing.ClassVar,
             typing.ClassVar,
             [TValue],
-            [TValue]
+            [TValue],
         )
 
     def test_generic(self):
@@ -124,7 +124,7 @@ class SpecialTestCase(BaseTestCase):
             [str, int],
             start=1,
             obj=1,
-            stop=2
+            stop=2,
         )
 
     def test_optional(self):
@@ -132,14 +132,14 @@ class SpecialTestCase(BaseTestCase):
             typing.Optional,
             typing.Optional,
             typing.Optional,
-            []
+            [],
         )
         self.plain_class_test(
             typing.Optional[TValue],
             typing.Union,
             typing.Union,
             [TValue, type(None)],
-            [TValue]
+            [TValue],
         )
 
     def test_tuple(self):
@@ -149,7 +149,7 @@ class SpecialTestCase(BaseTestCase):
             tuple,
             [TKey, TValue],
             [str, int],
-            stop=1
+            stop=1,
         )
 
     @skipIf(PY35 and VERSION <= (3, 5, 1),
@@ -162,7 +162,7 @@ class SpecialTestCase(BaseTestCase):
             type,
             [TValue],
             [int],
-            parameters
+            parameters,
         )
 
     def test_type_var(self):
@@ -179,7 +179,7 @@ class SpecialTestCase(BaseTestCase):
             [TKey, TValue],
             [str, int],
             stop=1,
-            fn=eq
+            fn=eq,
         )
 
 
@@ -191,14 +191,14 @@ class ABCTestCase(BaseTestCase):
             _abc.Set,
             [TValue],
             [int],
-            [T_co]
+            [T_co],
         )
 
     def test_byte_string(self):
         self.class_test(
             typing.ByteString,
             typing.ByteString,
-            _abc.ByteString
+            _abc.ByteString,
         )
 
     def test_container(self):
@@ -208,7 +208,7 @@ class ABCTestCase(BaseTestCase):
             _abc.Container,
             [TValue],
             [int],
-            [T_co]
+            [T_co],
         )
 
     @skipIf(PY35 and VERSION <= (3, 5, 3),
@@ -220,14 +220,14 @@ class ABCTestCase(BaseTestCase):
             _abc.AbstractContextManager,
             [TValue],
             [int],
-            [T_co]
+            [T_co],
         )
 
     def test_hashable(self):
         self.class_test(
             typing.Hashable,
             typing.Hashable,
-            _abc.Hashable
+            _abc.Hashable,
         )
 
     def test_items_view(self):
@@ -237,14 +237,14 @@ class ABCTestCase(BaseTestCase):
                 typing.ItemsView,
                 _abc.ItemsView,
                 [],
-                [T_co, KT, VT_co]
+                [T_co, KT, VT_co],
             )
             self.plain_class_test(
                 typing.ItemsView[TKey, TValue, TReturn],
                 typing.ItemsView,
                 _abc.ItemsView,
                 [TKey, TValue, TReturn],
-                [TKey, TValue, TReturn]
+                [TKey, TValue, TReturn],
             )
         else:
             self.plain_class_test(
@@ -252,14 +252,14 @@ class ABCTestCase(BaseTestCase):
                 typing.ItemsView,
                 _abc.ItemsView,
                 [],
-                [KT, VT_co]
+                [KT, VT_co],
             )
             self.plain_class_test(
                 typing.ItemsView[TKey, TValue],
                 typing.ItemsView,
                 _abc.ItemsView,
                 [TKey, TValue],
-                [TKey, TValue]
+                [TKey, TValue],
             )
 
     def test_iterable(self):
@@ -269,7 +269,7 @@ class ABCTestCase(BaseTestCase):
             _abc.Iterable,
             [TValue],
             [int],
-            [T_co]
+            [T_co],
         )
 
     def test_iterator(self):
@@ -279,7 +279,7 @@ class ABCTestCase(BaseTestCase):
             _abc.Iterator,
             [TValue],
             [int],
-            [T_co]
+            [T_co],
         )
 
     def test_keys_view(self):
@@ -289,7 +289,7 @@ class ABCTestCase(BaseTestCase):
             _abc.KeysView,
             [TKey],
             [int],
-            [KT]
+            [KT],
         )
 
     def test_mapping(self):
@@ -300,7 +300,7 @@ class ABCTestCase(BaseTestCase):
             [TKey, TValue],
             [int, str],
             [KT, VT_co],
-            fn=eq
+            fn=eq,
         )
 
     def test_mapping_view(self):
@@ -310,7 +310,7 @@ class ABCTestCase(BaseTestCase):
             _abc.MappingView,
             [TKey],
             [int],
-            [T_co]
+            [T_co],
         )
 
     def test_mutable_mapping(self):
@@ -321,7 +321,7 @@ class ABCTestCase(BaseTestCase):
             [TKey, TValue],
             [int, str],
             [KT, VT],
-            fn=eq
+            fn=eq,
         )
 
     def test_mutable_sequence(self):
@@ -331,7 +331,7 @@ class ABCTestCase(BaseTestCase):
             _abc.MutableSequence,
             [TValue],
             [int],
-            [T]
+            [T],
         )
 
     def test_mutable_set(self):
@@ -341,7 +341,7 @@ class ABCTestCase(BaseTestCase):
             _abc.MutableSet,
             [TValue],
             [int],
-            [T]
+            [T],
         )
 
     def test_sequence(self):
@@ -351,14 +351,14 @@ class ABCTestCase(BaseTestCase):
             _abc.Sequence,
             [TValue],
             [int],
-            [T_co]
+            [T_co],
         )
 
     def test_sized(self):
         self.class_test(
             typing.Sized,
             typing.Sized,
-            _abc.Sized
+            _abc.Sized,
         )
 
     def test_values_view(self):
@@ -368,7 +368,7 @@ class ABCTestCase(BaseTestCase):
             _abc.ValuesView,
             [TValue],
             [str],
-            [VT_co]
+            [VT_co],
         )
 
     @skipIf(VERSION < (3, 5, 2), 'Awaitable requires Python 3.5.2')
@@ -379,7 +379,7 @@ class ABCTestCase(BaseTestCase):
             _abc.Awaitable,
             [TValue],
             [int],
-            [T_co]
+            [T_co],
         )
 
     @skipIf(VERSION < (3, 5, 2), 'AsyncIterator requires Python 3.5.2')
@@ -390,7 +390,7 @@ class ABCTestCase(BaseTestCase):
             _abc.AsyncIterator,
             [TValue],
             [int],
-            [T_co]
+            [T_co],
         )
 
     @skipIf(VERSION < (3, 5, 2), 'AsyncIterable requires Python 3.5.2')
@@ -401,7 +401,7 @@ class ABCTestCase(BaseTestCase):
             _abc.AsyncIterable,
             [TValue],
             [int],
-            [T_co]
+            [T_co],
         )
 
     @skipIf(VERSION < (3, 5, 3), 'Coroutine requires Python 3.5.3')
@@ -413,7 +413,7 @@ class ABCTestCase(BaseTestCase):
             [TKey, TSend, TReturn],
             [int, str, str],
             [T_co, T_contra, V_co],
-            fn=eq
+            fn=eq,
         )
 
     @skipIf(VERSION < (3, 6, 0), 'Collection requires Python 3.6')
@@ -424,7 +424,7 @@ class ABCTestCase(BaseTestCase):
             _abc.Collection,
             [TValue],
             [int],
-            [T_co]
+            [T_co],
         )
 
     @skipIf(VERSION < (3, 6, 1), 'AsyncGenerator requires Python 3.6.1')
@@ -436,7 +436,7 @@ class ABCTestCase(BaseTestCase):
             [TKey, TSend],
             [int, str],
             [T_co, T_contra],
-            fn=eq
+            fn=eq,
         )
 
     @skipIf(
@@ -450,7 +450,7 @@ class ABCTestCase(BaseTestCase):
             _abc.AbstractAsyncContextManager,
             [TValue],
             [int],
-            [T_co]
+            [T_co],
         )
 
 
@@ -462,7 +462,7 @@ class ProtocolsTestCase(BaseTestCase):
             _abc.Reversible,
             [TValue],
             [int],
-            [T_co]
+            [T_co],
         )
 
     def test_supports_abs(self):
@@ -470,7 +470,7 @@ class ProtocolsTestCase(BaseTestCase):
             typing.SupportsAbs,
             typing.SupportsAbs,
             typing.SupportsAbs,
-            parameters=[T_co]
+            parameters=[T_co],
         )
 
     @skipIf(VERSION < (3, 0, 0), 'SupportsBytes requires Python 3.?.?')
@@ -478,28 +478,28 @@ class ProtocolsTestCase(BaseTestCase):
         self.class_test(
             typing.SupportsBytes,
             typing.SupportsBytes,
-            typing.SupportsBytes
+            typing.SupportsBytes,
         )
 
     def test_supports_complex(self):
         self.class_test(
             typing.SupportsComplex,
             typing.SupportsComplex,
-            typing.SupportsComplex
+            typing.SupportsComplex,
         )
 
     def test_supports_float(self):
         self.class_test(
             typing.SupportsFloat,
             typing.SupportsFloat,
-            typing.SupportsFloat
+            typing.SupportsFloat,
         )
 
     def test_supports_int(self):
         self.class_test(
             typing.SupportsInt,
             typing.SupportsInt,
-            typing.SupportsInt
+            typing.SupportsInt,
         )
 
     @skipIf(VERSION < (3, 0, 0), 'SupportsRound requires Python 3.?.?')
@@ -508,7 +508,7 @@ class ProtocolsTestCase(BaseTestCase):
             typing.SupportsRound,
             typing.SupportsRound,
             typing.SupportsRound,
-            parameters=[T_co]
+            parameters=[T_co],
         )
 
 
@@ -522,7 +522,7 @@ class CollectionTestCase(BaseTestCase):
             collections.Counter,
             [TValue],
             [int],
-            [T]
+            [T],
         )
 
     @skipIf(VERSION < (3, 3, 0)
@@ -537,7 +537,7 @@ class CollectionTestCase(BaseTestCase):
             [TKey, TValue],
             [int, str],
             [KT, VT],
-            fn=eq
+            fn=eq,
         )
 
     @skipIf((PY35 and VERSION <= (3, 5, 3)) or VERSION == (3, 6, 0),
@@ -549,7 +549,7 @@ class CollectionTestCase(BaseTestCase):
             collections.deque,
             [TValue],
             [int],
-            [T]
+            [T],
         )
 
     def test_dict(self):
@@ -560,7 +560,7 @@ class CollectionTestCase(BaseTestCase):
             [TKey, TValue],
             [int, str],
             [KT, VT],
-            fn=eq
+            fn=eq,
         )
 
     @skipIf((PY35 and VERSION <= (3, 5, 1)),
@@ -573,7 +573,7 @@ class CollectionTestCase(BaseTestCase):
             [TKey, TValue],
             [int, str],
             [KT, VT],
-            fn=eq
+            fn=eq,
         )
 
     def test_list(self):
@@ -583,7 +583,7 @@ class CollectionTestCase(BaseTestCase):
             list,
             [TValue],
             [int],
-            [T]
+            [T],
         )
 
     def test_set(self):
@@ -593,7 +593,7 @@ class CollectionTestCase(BaseTestCase):
             set,
             [TValue],
             [int],
-            [T]
+            [T],
         )
 
     def test_frozen_set(self):
@@ -603,18 +603,18 @@ class CollectionTestCase(BaseTestCase):
             frozenset,
             [TValue],
             [int],
-            [T_co]
+            [T_co],
         )
 
     def test_named_tuple(self):
         TestTuple = typing.NamedTuple(  # noqa: N806
             'TestTuple',
-            [('key', TKey), ('value', TValue)]
+            [('key', TKey), ('value', TValue)],
         )
         self.class_test(
             typing.NamedTuple,
             typing.NamedTuple,
-            typing.NamedTuple
+            typing.NamedTuple,
         )
         self.plain_test(TestTuple, Types.NONE)
 
@@ -627,7 +627,7 @@ class CollectionTestCase(BaseTestCase):
             [TKey, TValue],
             [int, str],
             [KT, VT],
-            fn=eq
+            fn=eq,
         )
 
     def test_generator(self):
@@ -638,7 +638,7 @@ class CollectionTestCase(BaseTestCase):
             [TValue, TSend, TReturn],
             [int, str, str],
             [T_co, T_contra, V_co],
-            fn=eq
+            fn=eq,
         )
 
 
@@ -672,7 +672,7 @@ class ReTestCase(BaseTestCase):
                 typing.Pattern,
                 re.Pattern,
                 [typing.AnyStr],
-                []
+                [],
             )
         else:
             self.plain_class_test(
@@ -680,7 +680,7 @@ class ReTestCase(BaseTestCase):
                 typing.Pattern,
                 re.Pattern,
                 [],
-                [typing.AnyStr]
+                [typing.AnyStr],
             )
 
     def test_match(self):
@@ -690,7 +690,7 @@ class ReTestCase(BaseTestCase):
                 typing.Match,
                 re.Match,
                 [typing.AnyStr],
-                []
+                [],
             )
         else:
             self.plain_class_test(
@@ -698,7 +698,7 @@ class ReTestCase(BaseTestCase):
                 typing.Match,
                 re.Match,
                 [],
-                [typing.AnyStr]
+                [typing.AnyStr],
             )
 
 
@@ -719,12 +719,12 @@ class ExtensionsTestCase(BaseTestCase):
         self.class_test(
             typing_extensions.Protocol,
             typing_extensions.Protocol,
-            typing_extensions.Protocol
+            typing_extensions.Protocol,
         )
         self.class_test(
             TestProtocol,
             typing_extensions.Protocol,
-            TestProtocol
+            TestProtocol,
         )
 
     # Special
@@ -733,14 +733,14 @@ class ExtensionsTestCase(BaseTestCase):
             typing_extensions.ClassVar,
             typing_extensions.ClassVar,
             typing_extensions.ClassVar,
-            []
+            [],
         )
         self.plain_class_test(
             typing_extensions.ClassVar[TValue],
             typing_extensions.ClassVar,
             typing_extensions.ClassVar,
             [TValue],
-            [TValue]
+            [TValue],
         )
 
     def test_type(self):
@@ -750,7 +750,7 @@ class ExtensionsTestCase(BaseTestCase):
             type,
             [TValue],
             [int],
-            [CT_te]
+            [CT_te],
         )
 
     # ABCs
@@ -761,7 +761,7 @@ class ExtensionsTestCase(BaseTestCase):
             _abc.AbstractContextManager,
             [TValue],
             [int],
-            [T_co]
+            [T_co],
         )
 
     @skipIf(VERSION < (3, 5, 0), 'te.Awaitable requires Python 3.5')
@@ -772,7 +772,7 @@ class ExtensionsTestCase(BaseTestCase):
             _abc.Awaitable,
             [TValue],
             [int],
-            [T_co]
+            [T_co],
         )
 
     @skipIf(VERSION < (3, 5, 0), 'te.AsyncIterator requires Python 3.5')
@@ -783,7 +783,7 @@ class ExtensionsTestCase(BaseTestCase):
             _abc.AsyncIterator,
             [TValue],
             [int],
-            [T_co]
+            [T_co],
         )
 
     @skipIf(VERSION < (3, 5, 0), 'te.AsyncIterable requires Python 3.5')
@@ -794,7 +794,7 @@ class ExtensionsTestCase(BaseTestCase):
             _abc.AsyncIterable,
             [TValue],
             [int],
-            [T_co]
+            [T_co],
         )
 
     @skipIf(VERSION < (3, 5, 0), 'te.Coroutine requires Python 3.5')
@@ -810,7 +810,7 @@ class ExtensionsTestCase(BaseTestCase):
             [TKey, TSend, TReturn],
             [int, str, str],
             parameters,
-            fn=eq
+            fn=eq,
         )
 
     @skipIf(VERSION < (3, 6, 0), 'te.AsyncGenerator requires Python 3.6')
@@ -822,7 +822,7 @@ class ExtensionsTestCase(BaseTestCase):
             [TKey, TSend],
             [int, str],
             [T_co, T_contra],
-            fn=eq
+            fn=eq,
         )
 
     @skipIf(VERSION < (3, 5, 0), 'te.AsyncContextManager requires Python 3.5')
@@ -833,7 +833,7 @@ class ExtensionsTestCase(BaseTestCase):
             _abc.AbstractAsyncContextManager,
             [TValue],
             [int],
-            [T_co]
+            [T_co],
         )
 
     @skipIf(VERSION < (3, 3, 0), 'te.ChainMap requires Python 3.3')
@@ -845,7 +845,7 @@ class ExtensionsTestCase(BaseTestCase):
             [TKey, TValue],
             [int, str],
             [KT, VT],
-            fn=eq
+            fn=eq,
         )
 
     # collection
@@ -855,7 +855,7 @@ class ExtensionsTestCase(BaseTestCase):
             typing_extensions.Counter,
             collections.Counter,
             [],
-            [T]
+            [T],
         )
         if PY35 and VERSION <= (3, 5, 1):
             self.plain_class_test(
@@ -863,7 +863,7 @@ class ExtensionsTestCase(BaseTestCase):
                 typing_extensions.Counter,
                 collections.Counter,
                 [TValue, int],
-                [TValue]
+                [TValue],
             )
         else:
             self.plain_class_test(
@@ -871,7 +871,7 @@ class ExtensionsTestCase(BaseTestCase):
                 typing_extensions.Counter,
                 collections.Counter,
                 [TValue],
-                [TValue]
+                [TValue],
             )
 
     def test_deque(self):
@@ -881,7 +881,7 @@ class ExtensionsTestCase(BaseTestCase):
             collections.deque,
             [TValue],
             [int],
-            [T]
+            [T],
         )
 
     def test_default_dict(self):
@@ -892,7 +892,7 @@ class ExtensionsTestCase(BaseTestCase):
             [TKey, TValue],
             [int, str],
             [KT, VT],
-            fn=eq
+            fn=eq,
         )
 
     # One-off

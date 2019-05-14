@@ -1,6 +1,6 @@
 from ..core import get_typing
 from ..core.helpers import (
-    PY_35, PY_OLD, VERSION, safe_getattr_tuple
+    PY_35, PY_OLD, VERSION, safe_getattr_tuple,
 )
 
 
