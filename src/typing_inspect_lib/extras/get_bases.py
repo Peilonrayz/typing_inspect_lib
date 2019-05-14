@@ -58,8 +58,8 @@ else:
 # TODO: reduce complexity
 if PY_35 and VERSION <= (3, 5, 2):  # noqa: MC0001
     def _bases(type_):
-        t, _ = get_typing(type_)
-        type_ = t or type_
+        t_typing, _ = get_typing(type_)
+        type_ = t_typing or type_
         origins = safe_getattr_tuple(type_, '__bases__')
         if not origins:
             return ()

@@ -12,14 +12,14 @@ except ImportError:
 from . import abc
 from . import typing_
 from . import re
-from .helpers import PY350_2, PY_35, PY_OLD, VERSION
+from .helpers import PY350_2, PY_OLD, VERSION, safe_dict_get, safe_dict_get_both
 
 __all__ = [
     'LITERAL_TYPES',
     'TYPING_OBJECTS',
-    'SPECIAL_OBJECTS_WRAPPED',
     'is_typing',
     'is_special',
+    'get_special_wrapped',
 ]
 
 _SENTINEL = object()
@@ -29,23 +29,7 @@ with open(os.path.join(_FILE_DIR, 'links.json')) as f:
     _LINKS = json.load(f)
 
 
-# TODO: move down to edge-cases
-# Python 3.5 class type incompatibilities
-_OLD_CLASS = {
-    (typing.Dict, abc.MutableMapping): dict,
-    (typing.List, abc.MutableSequence): list,
-    (typing.Set, abc.MutableSet): set,
-    (typing.FrozenSet, abc.Set): frozenset,
-    (typing.Tuple, typing.Tuple): tuple,
-    (typing.Callable, typing.Callable): abc.Callable,
-}
-
-
-if PY_35 and VERSION <= (3, 5, 2):
-    def _from_typing_to_class(t_typing):
-        t_class = getattr(t_typing, '__extra__', None) or t_typing
-        return _OLD_CLASS.get((t_typing, t_class), t_class)
-elif PY_OLD:
+if PY_OLD:
     def _from_typing_to_class(t_typing):
         return getattr(t_typing, '__extra__', None) or t_typing
 else:
@@ -65,7 +49,7 @@ class _Types(abc.MutableMapping):
     def __setitem__(self, key, value):
         old_value = self._values.get(key, _SENTINEL)
         if old_value is not _SENTINEL:
-            self._inv.pop(old_value)
+            self._inv.pop(old_value, None)
         self._values[key] = value
         self._inv._values[value] = key
 
@@ -86,34 +70,11 @@ class Types(object):  # pylint: disable=useless-object-inheritance, too-few-publ
         self.typing._inv = self.class_
         self.class_._inv = self.typing
 
-        for t in types:
-            self.typing[t] = _from_typing_to_class(t)
+        for t_typing in types:
+            self.typing[t_typing] = _from_typing_to_class(t_typing)
 
         self.class_to_typing = self.class_
         self.typing_to_class = self.typing
-        self._build_class_types()
-
-    def _build_class_types(self):
-        # ClassVar only works correctly with this...
-        self.class_types = {c: (t, c) for c, t in self.class_.items()}
-
-    @staticmethod
-    def _update_class_type(old_key, new_key):
-        link_types = (
-            SPECIAL_OBJECTS_WRAPPED.class_types,
-            # SPECIAL_OBJECTS_WRAPPED.class_to_typing,
-        )
-        for link_type in link_types:
-            try:
-                value = link_type[old_key]
-            except KeyError:
-                pass
-            else:
-                link_type[new_key] = value
-
-    def update_class_types(self, changes):
-        for key in changes:
-            self._update_class_type(*key)
 
 
 def _literal_to_link_types(literals):
@@ -135,14 +96,6 @@ def _read_globals(global_attrs):
     return values
 
 
-def is_typing(type_):
-    return type_ in TYPING_OBJECTS.typing or type_ in TYPING_OBJECTS.class_
-
-
-def is_special(type_):
-    return type_ in SPECIAL_OBJECTS.typing or type_ in SPECIAL_OBJECTS.class_
-
-
 LITERAL_TYPES = _literal_to_link_types(
     [
         str,
@@ -158,37 +111,53 @@ LITERAL_TYPES = _literal_to_link_types(
     + _read_globals(_LINKS['literal']),
 )
 
-# TODO: reduce reliance on these, change reliance to `get_typing`
 TYPING_OBJECTS = Types(_read_globals(_LINKS['typing']))
 SPECIAL_OBJECTS = Types(_read_globals(_LINKS['special']))
 SPECIAL_OBJECTS_WRAPPED = Types(_read_globals(_LINKS['special wrapped']))
 
 # Edge cases
+_CHANGES = [
+    (typing.Pattern, re.Pattern),
+    (typing.Match, re.Match),
+    (typing.Dict, dict),
+    (typing.List, list),
+    (typing.Set, set),
+    (typing.FrozenSet, frozenset),
+    (typing.Tuple, tuple),
+    (typing.Callable, abc.Callable),
+    (typing.AbstractSet, abc.Set),
+    (typing.MutableMapping, abc.MutableMapping),
+    (typing.MutableSequence, abc.MutableSequence),
+    (typing.MutableSet, abc.MutableSet)
+]
+for from_, to in _CHANGES:
+    for mapping in (TYPING_OBJECTS, SPECIAL_OBJECTS, SPECIAL_OBJECTS_WRAPPED):
+        if from_ in mapping.typing:
+            mapping.typing[from_] = to
 
-TYPING_OBJECTS.typing[typing.Pattern] = re.Pattern
-TYPING_OBJECTS.typing[typing.Match] = re.Match
-TYPING_OBJECTS._build_class_types()
 
-# TODO: Convert to easier to understand code
-SPECIAL_OBJECTS_WRAPPED.update_class_types([
-    (
+_SPECIAL_CONV = {
+    (typing.CallableMeta if PY_OLD else collections.abc.Callable):
         SPECIAL_OBJECTS_WRAPPED.typing_to_class[typing.Callable],
-        (typing.CallableMeta if PY_OLD else collections.abc.Callable),
-    ),
-    (
+    (typing_.ClassVarMeta if PY350_2 else typing_._ClassVar):
         typing_.ClassVar,
-        (typing_.ClassVarMeta if PY350_2 else typing_._ClassVar)
-    ),
-    (
+    (typing.OptionalMeta if PY350_2 else typing.Optional):
         typing.Optional,
-        (typing.OptionalMeta if PY350_2 else typing.Optional)
-    ),
-    (
+    (typing.TupleMeta if PY_OLD else tuple):
         SPECIAL_OBJECTS_WRAPPED.typing_to_class[typing.Tuple],
-        (typing.TupleMeta if PY_OLD else tuple)
-    ),
-    (
+    (typing.UnionMeta if PY350_2 else typing_._Union):
         typing.Union,
-        (typing.UnionMeta if PY350_2 else typing_._Union)
-    ),
-])
+}
+
+
+def get_special_wrapped(type_):
+    key = safe_dict_get(_SPECIAL_CONV, type(type_), type(type_))
+    return safe_dict_get_both(SPECIAL_OBJECTS_WRAPPED.class_, key, inv=True)
+
+
+def is_typing(type_):
+    return type_ in TYPING_OBJECTS.typing or type_ in TYPING_OBJECTS.class_
+
+
+def is_special(type_):
+    return type_ in SPECIAL_OBJECTS.typing or type_ in SPECIAL_OBJECTS.class_

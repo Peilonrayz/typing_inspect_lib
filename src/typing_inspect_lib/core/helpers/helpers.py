@@ -32,6 +32,7 @@ def safe_dict_get(dict_, key, default=None):
         return value
 
 
+# pylint: disable=too-many-branches
 def safe_dict_get_both(dict_, key, default=None, inv=False):
     try:
         value = dict_.get(key, _SENTINEL)

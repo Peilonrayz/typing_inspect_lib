@@ -8,8 +8,8 @@ from .helpers import (
     safe_getattr_tuple, safe_dict_get_both
 )
 from .links import (
-    LITERAL_TYPES, SPECIAL_OBJECTS_WRAPPED, TYPING_OBJECTS, is_typing,
-    is_special
+    LITERAL_TYPES, TYPING_OBJECTS, is_typing,
+    is_special, get_special_wrapped
 )
 
 __all__ = [
@@ -27,7 +27,7 @@ __all__ = [
     're',
     'LITERAL_TYPES',
     'TYPING_OBJECTS',
-    'SPECIAL_OBJECTS_WRAPPED',
     'is_typing',
     'is_special',
+    'get_special_wrapped',
 ]

@@ -3,8 +3,8 @@ import typing
 
 from .get_origins import _get_last_origin
 from .helpers import (
-    LITERAL_TYPES, PY_OLD, SPECIAL_OBJECTS_WRAPPED, TYPING_OBJECTS, safe_dict_get,
-    typing_, safe_dict_get_both
+    LITERAL_TYPES, PY_OLD, TYPING_OBJECTS, safe_dict_get,
+    typing_, safe_dict_get_both, get_special_wrapped
 )
 
 
@@ -25,7 +25,7 @@ if PY_OLD:
         """
         origin = _get_last_origin(type_)
         if origin is not None:
-            return origin, safe_dict_get(TYPING_OBJECTS.typing_to_class, origin) or origin
+            return origin, safe_dict_get(TYPING_OBJECTS.typing, origin) or origin
 
         if isinstance(type_, typing.GenericMeta):
             return type_, type_
@@ -34,7 +34,7 @@ else:
     def _get_typing(type_):
         origin = getattr(type_, '__origin__', None)
         if origin is not None:
-            return safe_dict_get(TYPING_OBJECTS.class_to_typing, origin) or origin, origin
+            return safe_dict_get(TYPING_OBJECTS.class_, origin) or origin, origin
 
         if hasattr(type_, '__orig_bases__'):
             return type_, type_
@@ -55,7 +55,7 @@ def _get_special_typing_universal(type_):
 if PY_OLD:
     def _get_special_typing(type_):
         """Handles special types that can't be handled through normal means."""
-        return safe_dict_get(SPECIAL_OBJECTS_WRAPPED.class_types, type(type_))
+        return get_special_wrapped(type_)
 else:
     def _get_special_typing(type_):
         return None

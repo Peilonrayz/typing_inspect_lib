@@ -43,8 +43,8 @@ def get_mro_orig(type_):
     mro = ()
     for class_ in get_mro(type_):
         if class_ not in parents:
-            t, c = get_typing(class_)
-            mro += (_BaseObj(t or class_, c or class_, None),)
+            t_typing, t_class = get_typing(class_)
+            mro += (_BaseObj(t_typing or class_, t_class or class_, None),)
             continue
 
         classes = parents.pop(class_)
