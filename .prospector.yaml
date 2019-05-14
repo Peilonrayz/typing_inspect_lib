@@ -1,0 +1,26 @@
+strictness: veryhigh
+# doc-warnings: true
+test-warnings: true
+member-warnings: true
+
+ignore-patterns:
+  - (^|/)venv
+  - ^tests
+
+pep8:
+  options:
+    max-line-length: 90
+
+pyroma:
+  run: true
+  disable:
+    - PYR06
+
+pylint:
+  options:
+    max-line-length: 90
+    generated-members: typing.*
+  disable:
+    - protected-access
+    - no-else-return
+    - unused-argument

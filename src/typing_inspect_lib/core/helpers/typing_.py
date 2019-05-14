@@ -1,3 +1,5 @@
+# pylint: disable=invalid-name
+
 import sys
 import typing
 try:

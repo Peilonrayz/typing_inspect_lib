@@ -1,16 +1,89 @@
 language: python
-python:
-    - "2.7"
-    - "3.4"
-    - "3.5.0"
-    - "3.5.1"
-    - "3.5.2"
-    - "3.5.3"
-    - "3.5-dev"
-    - "3.6.0"
-    - "3.6-dev"
+matrix:
+  include:
+    - python: 3.7
+      env: TOXENV=check
+      dist: xenial
 
-install: "make"
+    - python: 2.7
+      env: TOXENV=unit-py27
+    - python: 3.4
+      env: TOXENV=unit-py34
+    - python: 3.5.0
+      env: TOXENV=unit-py35
+    - python: 3.5.1
+      env: TOXENV=unit-py35
+    - python: 3.5.2
+      env: TOXENV=unit-py35
+    - python: 3.5.3
+      env: TOXENV=unit-py35
+    - python: 3.5-dev
+      env: TOXENV=unit-py35
+    - python: 3.6.0
+      env: TOXENV=unit-py36
+    - python: 3.6-dev
+      env: TOXENV=unit-py36
+    - python: 3.7.0
+      env: TOXENV=unit-py37
+      dist: xenial
+    - python: 3.7-dev
+      env: TOXENV=unit-py37
+      dist: xenial
+    - python: 3.8-dev
+      env: TOXENV=unit-py38
+      dist: xenial
+    - python: nightly
+      env: TOXENV=unit-pynightly
+      dist: xenial
+
+    - python: 2.7
+      env: TOXENV=unit-py27-te
+    - python: 3.4
+      env: TOXENV=unit-py34-te
+    - python: 3.5.0
+      env: TOXENV=unit-py35-te
+    - python: 3.5.1
+      env: TOXENV=unit-py35-te
+    - python: 3.5.2
+      env: TOXENV=unit-py35-te
+    - python: 3.5.3
+      env: TOXENV=unit-py35-te
+    - python: 3.5-dev
+      env: TOXENV=unit-py35-te
+    - python: 3.6.0
+      env: TOXENV=unit-py36-te
+    - python: 3.6-dev
+      env: TOXENV=unit-py36-te
+    - python: 3.7.0
+      env: TOXENV=unit-py37-te
+      dist: xenial
+    - python: 3.7-dev
+      env: TOXENV=unit-py37-te
+      dist: xenial
+    - python: 3.8-dev
+      env: TOXENV=unit-py38-te
+      dist: xenial
+    - python: nightly
+      env: TOXENV=unit-pynightly-te
+      dist: xenial
+  allow_failures:
+    - python: 3.8-dev
+      env: TOXENV=unit-py38
+      dist: xenial
+    - python: nightly
+      env: TOXENV=unit-pynightly
+      dist: xenial
+
+    - python: 3.8-dev
+      env: TOXENV=unit-py38-te
+      dist: xenial
+    - python: nightly
+      env: TOXENV=unit-pynightly-te
+      dist: xenial
+
+install:
+  - pip install tox
 
 script:
-    - make test
+  - export TOX_SKIP_MISSING_INTERPRETERS="False"
+  - tox

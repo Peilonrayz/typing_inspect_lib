@@ -1,5 +1,7 @@
-import contextlib
+# pylint: disable=invalid-name
+
 import collections
+import contextlib
 import sys
 import types
 import typing
@@ -42,7 +44,7 @@ __all__ = [
 
     # contextlib
     'AbstractContextManager',
-    'AbstractAsyncContextManager'
+    'AbstractAsyncContextManager',
 ]
 
 if _VERSION < (3, 3, 0):
@@ -89,4 +91,5 @@ else:
     _AsyncContextManager = getattr(typing, 'AsyncContextManager', None)
 
 AbstractContextManager = getattr(contextlib, 'AbstractContextManager', _ContextManager)
-AbstractAsyncContextManager = getattr(contextlib, 'AbstractAsyncContextManager', _AsyncContextManager)
+AbstractAsyncContextManager = getattr(contextlib, 'AbstractAsyncContextManager',
+                                      _AsyncContextManager)

@@ -1,3 +1,4 @@
 include LICENSE README.md
 include setup.py
+include src/typing_inspect_lib/core/helpers/links.json
 recursive-include tests *.py
