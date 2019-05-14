@@ -17,8 +17,9 @@ from .helpers import PY350_2, PY_35, PY_OLD, VERSION
 __all__ = [
     'LITERAL_TYPES',
     'TYPING_OBJECTS',
-    'SPECIAL_OBJECTS',
     'SPECIAL_OBJECTS_WRAPPED',
+    'is_typing',
+    'is_special',
 ]
 
 _SENTINEL = object()
@@ -52,36 +53,9 @@ else:
         return getattr(t_typing, '__origin__', None) or t_typing
 
 
-class _TypesBoth(abc.MutableMapping):
-    def __init__(self, values, both):
-        self._values = values
-        self._both = both
-
-    def __getitem__(self, key):
-        value = self._values[key]
-        return self._both(self._values._inv[value], value)
-
-    def __setitem__(self, key, values):
-        if key not in values:
-            raise ValueError('Key must be in value')
-        if len(values) != 2:
-            raise ValueError('Value must have a length of two')
-        self._values[key] = [i for i in values if i != key][0]
-
-    def __delitem__(self, v):
-        self._values.__delitem__(v)
-
-    def __len__(self):
-        return len(self._values)
-
-    def __iter__(self):
-        return iter(self._values)
-
-
 class _Types(abc.MutableMapping):
-    def __init__(self, both):
+    def __init__(self):
         self._values = {}
-        self.both = _TypesBoth(self, both)
         # Should be set to the inverse
         self._inv = {}
 
@@ -107,17 +81,15 @@ class _Types(abc.MutableMapping):
 
 class Types(object):  # pylint: disable=useless-object-inheritance, too-few-public-methods
     def __init__(self, types):
-        self.typing = _Types(lambda a, b: (a, b))
-        self.class_ = _Types(lambda a, b: (b, a))
+        self.typing = _Types()
+        self.class_ = _Types()
         self.typing._inv = self.class_
         self.class_._inv = self.typing
 
         for t in types:
             self.typing[t] = _from_typing_to_class(t)
 
-        self.class_types = self.class_.both
         self.class_to_typing = self.class_
-        self.typing_types = self.typing.both
         self.typing_to_class = self.typing
         self._build_class_types()
 
@@ -163,6 +135,14 @@ def _read_globals(global_attrs):
     return values
 
 
+def is_typing(type_):
+    return type_ in TYPING_OBJECTS.typing or type_ in TYPING_OBJECTS.class_
+
+
+def is_special(type_):
+    return type_ in SPECIAL_OBJECTS.typing or type_ in SPECIAL_OBJECTS.class_
+
+
 LITERAL_TYPES = _literal_to_link_types(
     [
         str,
@@ -178,6 +158,7 @@ LITERAL_TYPES = _literal_to_link_types(
     + _read_globals(_LINKS['literal']),
 )
 
+# TODO: reduce reliance on these, change reliance to `get_typing`
 TYPING_OBJECTS = Types(_read_globals(_LINKS['typing']))
 SPECIAL_OBJECTS = Types(_read_globals(_LINKS['special']))
 SPECIAL_OBJECTS_WRAPPED = Types(_read_globals(_LINKS['special wrapped']))

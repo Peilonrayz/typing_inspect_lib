@@ -42,6 +42,8 @@ class Types:
 
 
 class BaseTestCase(TestCase):
+    maxDiff = None
+
     def plain_test(self, type_, type_class):
         if type_class is Types.LITERAL:
             self.assertEqual(types_.build_types(type_), type_)

@@ -5,9 +5,12 @@ from . import re
 from . import typing_
 from .helpers import (
     PY350_2, PY_35, PY_OLD, VERSION, pairwise, safe_dict_contains, safe_dict_get,
-    safe_getattr_tuple
+    safe_getattr_tuple, safe_dict_get_both
 )
-from .links import LITERAL_TYPES, SPECIAL_OBJECTS, SPECIAL_OBJECTS_WRAPPED, TYPING_OBJECTS
+from .links import (
+    LITERAL_TYPES, SPECIAL_OBJECTS_WRAPPED, TYPING_OBJECTS, is_typing,
+    is_special
+)
 
 __all__ = [
     'VERSION',
@@ -15,6 +18,7 @@ __all__ = [
     'PY_35',
     'PY350_2',
     'safe_dict_get',
+    'safe_dict_get_both',
     'safe_dict_contains',
     'safe_getattr_tuple',
     'pairwise',
@@ -23,6 +27,7 @@ __all__ = [
     're',
     'LITERAL_TYPES',
     'TYPING_OBJECTS',
-    'SPECIAL_OBJECTS',
     'SPECIAL_OBJECTS_WRAPPED',
+    'is_typing',
+    'is_special',
 ]

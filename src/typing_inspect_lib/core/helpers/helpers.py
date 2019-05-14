@@ -7,6 +7,7 @@ __all__ = [
     'PY_35',
     'PY350_2',
     'safe_dict_get',
+    'safe_dict_get_both',
     'safe_dict_contains',
     'safe_getattr_tuple',
     'pairwise',
@@ -29,6 +30,27 @@ def safe_dict_get(dict_, key, default=None):
         if value is _SENTINEL:
             return default
         return value
+
+
+def safe_dict_get_both(dict_, key, default=None, inv=False):
+    try:
+        value = dict_.get(key, _SENTINEL)
+    except TypeError:
+        return default
+    else:
+        if value is _SENTINEL:
+            return default
+    try:
+        key = dict_._inv.get(value, _SENTINEL)
+    except TypeError:
+        return default
+    else:
+        if key is _SENTINEL:
+            return default
+        value = (key, value)
+        if inv:
+            value = reversed(value)
+        return tuple(value)
 
 
 def safe_dict_contains(dict_, key):

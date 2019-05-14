@@ -3,7 +3,8 @@ import typing
 
 from .get_origins import _get_last_origin
 from .helpers import (
-    LITERAL_TYPES, PY_OLD, SPECIAL_OBJECTS_WRAPPED, TYPING_OBJECTS, safe_dict_get, typing_
+    LITERAL_TYPES, PY_OLD, SPECIAL_OBJECTS_WRAPPED, TYPING_OBJECTS, safe_dict_get,
+    typing_, safe_dict_get_both
 )
 
 
@@ -73,8 +74,8 @@ def get_typing(type_):
     ret = (
         _get_special_typing_universal(type_)
         or safe_dict_get(LITERAL_TYPES, type_)
-        or safe_dict_get(TYPING_OBJECTS.class_types, type_)
-        or safe_dict_get(TYPING_OBJECTS.typing_types, type_)
+        or safe_dict_get_both(TYPING_OBJECTS.class_, type_, inv=True)
+        or safe_dict_get_both(TYPING_OBJECTS.typing, type_)
         or _get_typing(type_)
         or _get_special_typing(type_)
     )

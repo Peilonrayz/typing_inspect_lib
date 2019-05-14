@@ -13,7 +13,7 @@ except ImportError:
     CT = typing.TypeVar('CT_co', bound=type, covariant=True)
 
 try:
-    from typing import CT as _CT_te
+    from typing import CT as _CT_te  # noqa: N811
 except ImportError:
     _CT_te = typing.TypeVar('CT', bound=type)
 

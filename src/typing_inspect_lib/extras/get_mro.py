@@ -1,13 +1,12 @@
 from ..core import get_typing
 from ..core.helpers import (
-    PY_35, PY_OLD, TYPING_OBJECTS, VERSION, safe_dict_contains, safe_dict_get,
-    safe_getattr_tuple
+    PY_35, PY_OLD, VERSION, safe_getattr_tuple
 )
 
 
 def _get_mro_conv_dedupe(mro):
     collection_mro = iter(
-        safe_dict_get(TYPING_OBJECTS.typing_to_class, obj) or obj
+        get_typing(obj)[1] or obj
         for obj in reversed(mro)
     )
     mro = ()
@@ -59,7 +58,5 @@ def get_mro(type_):
         get_mro(abc.Mapping) == mro
         get_mro(Mapping[int, str]) == mro
     """
-    type_ = safe_dict_get(TYPING_OBJECTS.typing_to_class, type_) or type_
-    if not safe_dict_contains(TYPING_OBJECTS.class_types, type_):
-        _, type_ = get_typing(type_)
-    return _get_mro(type_)
+    _, typing = get_typing(type_)
+    return _get_mro(typing or type_)

@@ -3,8 +3,7 @@ import collections
 from ..core import get_parameters, get_type_info, get_typing
 from ..core.get_type_info import _TypeInfo
 from ..core.helpers import (
-    PY_35, PY_OLD, TYPING_OBJECTS, VERSION, safe_dict_contains, safe_dict_get,
-    safe_getattr_tuple
+    PY_35, PY_OLD, VERSION, safe_getattr_tuple, is_typing
 )
 
 _BaseObj = collections.namedtuple('BaseObj', ['typing', 'class_', 'orig'])
@@ -18,7 +17,7 @@ def _get_bases_typing(type_):
     return tuple(
         (
             t_type,
-            safe_dict_get(TYPING_OBJECTS.typing_to_class, t_type) or t_type,
+            get_typing(t_type)[1] or t_type,
         )
         for t_type in bases
     )
@@ -31,7 +30,7 @@ def _get_bases_class(type_):
         return None
     return tuple(
         (
-            safe_dict_get(TYPING_OBJECTS.class_to_typing, t_class) or t_class,
+            get_typing(t_class)[0] or t_class,
             t_class,
         )
         for t_class in bases
@@ -47,7 +46,7 @@ if PY_35 and VERSION <= (3, 5, 2):
         return tuple((i.typing, i.class_) for i in bases)
 elif PY_OLD:
     def _get_bases_default(type_):
-        if safe_dict_contains(TYPING_OBJECTS.class_types, type_):
+        if is_typing(type_):
             return _get_bases_class(type_)
         else:
             return _get_bases_typing(type_)
@@ -59,7 +58,8 @@ else:
 # TODO: reduce complexity
 if PY_35 and VERSION <= (3, 5, 2):  # noqa: MC0001
     def _bases(type_):
-        type_ = safe_dict_get(TYPING_OBJECTS.class_to_typing, type_) or type_
+        t, _ = get_typing(type_)
+        type_ = t or type_
         origins = safe_getattr_tuple(type_, '__bases__')
         if not origins:
             return ()
@@ -129,12 +129,12 @@ def get_bases(type_):
         return _bases(type_)
     if (
         not type_info.args
-        or not safe_dict_contains(TYPING_OBJECTS.class_types, type_info.class_)
+        or not is_typing(type_info.class_)
     ):
         return _bases(type_info.class_)
     bases = ()
     for base in _bases(type_info.class_):
-        if not safe_dict_contains(TYPING_OBJECTS.class_types, base.class_):
+        if not is_typing(base.class_):
             bases += (base,)
         else:
             parameters = get_parameters(base.typing)
