@@ -5,20 +5,10 @@ from .get_parameters import _get_parameters
 from .get_typing import get_typing
 
 
-class _TypeInfo(
-        collections.namedtuple(
-            'TypeInfo',
-            ['typing', 'class_', 'args', 'parameters']
-        )
-):
-    def __eq__(self, other):
-        if not isinstance(other, _TypeInfo):
-            return False
-        if not (self.typing is other.typing or self.typing == other.typing):
-            return False
-        if not (self.class_ is other.class_ or self.class_ == other.class_):
-            return False
-        return self.args == other.args and self.parameters == other.parameters
+_TypeInfo = collections.namedtuple(
+    'TypeInfo',
+    ['typing', 'class_', 'args', 'parameters']
+)
 
 
 def get_type_info(type_):

@@ -58,9 +58,6 @@ class BaseTestCase(TestCase):
         args = tuple(types_.build_types(a) for a in args or [])
         parameters = tuple(types_.build_types(p) for p in parameters or [])
         type_info = types_.Type(typing_, class_, args, parameters)
-        if type_ is typing.Pattern:
-            print(type_info)
-            print(types_.build_types(type_))
         self.assertEqual(types_.build_types(type_), type_info)
 
     def class_test(self, type_, typing_, class_, t_args=None, args=None, parameters=None,
