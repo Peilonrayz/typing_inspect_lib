@@ -11,8 +11,10 @@ matrix:
       env: TOXENV=unit-py34
     - python: 3.5.0
       env: TOXENV=unit-py35
+      dist: trusty
     - python: 3.5.1
       env: TOXENV=unit-py35
+      dist: trusty
     - python: 3.5.2
       env: TOXENV=unit-py35
     - python: 3.5.3
@@ -21,6 +23,7 @@ matrix:
       env: TOXENV=unit-py35
     - python: 3.6.0
       env: TOXENV=unit-py36
+      dist: trusty
     - python: 3.6-dev
       env: TOXENV=unit-py36
     - python: 3.7.0
