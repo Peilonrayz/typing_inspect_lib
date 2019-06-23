@@ -1,3 +1,5 @@
+"""Get MRO orig."""
+
 import typing
 
 from .get_bases import _BaseObj
@@ -10,6 +12,7 @@ from ..core.helpers import (
 
 
 def _inner_set(values):
+    """Get the set of values in tables columns."""
     values_ = zip(*values)
     return [set(value) for value in values_]
 
@@ -25,16 +28,17 @@ if PY_35 and VERSION <= (3, 5, 2):
             raise ValueError("Didn't consume all parents: {0}".format(parents))
 else:
     def _ensure_consumed_parents(type_, parents):
+        """Ensure all parents have been consumed."""
         if parents:
             raise ValueError("Didn't consume all parents: {0}".format(parents))
 
 
 def get_mro_orig(type_):
     """
-    Gets the mro of the type. Returning them as typing types, class types and orig types.
+    Get the mro of the type. Returning them as typing types, class types and orig types.
 
     Builtin types are converted to their class type to get the MRO
-    and so `Generic` is missing.
+    and so :class:`typing.Generic` is missing.
     """
     parents = {}
     for parent in get_parents(type_):

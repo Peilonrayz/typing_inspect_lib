@@ -1,8 +1,11 @@
+"""Get parents."""
+
 from .get_bases import _BaseObj, get_bases
 from ..core import get_type_info
 
 
 def _get_parents(type_):
+    """Get the parents from the provided type."""
     parents = ()
     for base in get_bases(type_):
         parents += (base,)

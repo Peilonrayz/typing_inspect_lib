@@ -1,3 +1,5 @@
+"""Core files to typing inspect."""
+
 __all__ = [
     'get_args',
     'get_base_type',

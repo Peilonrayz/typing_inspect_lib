@@ -1,3 +1,5 @@
+"""Builds internal mappings."""
+
 import collections
 import json
 import operator
@@ -34,10 +36,13 @@ if PY_OLD:
         return getattr(t_typing, '__extra__', None) or t_typing
 else:
     def _from_typing_to_class(t_typing):
+        """Get class type from typing type."""
         return getattr(t_typing, '__origin__', None) or t_typing
 
 
 class _Types(abc.MutableMapping):
+    """Mapping between two types."""
+
     def __init__(self):
         self._values = {}
         # Should be set to the inverse
@@ -64,6 +69,8 @@ class _Types(abc.MutableMapping):
 
 
 class Types(object):  # pylint: disable=useless-object-inheritance, too-few-public-methods
+    """Hold typing and class conversions."""
+
     def __init__(self, types):
         self.typing = _Types()
         self.class_ = _Types()
@@ -78,10 +85,12 @@ class Types(object):  # pylint: disable=useless-object-inheritance, too-few-publ
 
 
 def _literal_to_link_types(literals):
+    """Build literal dictionary."""
     return {l: (l, l) for l in literals}
 
 
 def _read_globals(global_attrs):
+    """Read global values and get attributes."""
     global_ = globals()
     values = []
     for attr in global_attrs:
@@ -151,13 +160,16 @@ _SPECIAL_CONV = {
 
 
 def get_special_wrapped(type_):
+    """Get special types types."""
     key = safe_dict_get(_SPECIAL_CONV, type(type_), type(type_))
     return safe_dict_get_both(SPECIAL_OBJECTS_WRAPPED.class_, key, inv=True)
 
 
 def is_typing(type_):
+    """Check if type is a :mod:`typing` type."""
     return type_ in TYPING_OBJECTS.typing or type_ in TYPING_OBJECTS.class_
 
 
 def is_special(type_):
+    """Check if type is special type."""
     return type_ in SPECIAL_OBJECTS.typing or type_ in SPECIAL_OBJECTS.class_

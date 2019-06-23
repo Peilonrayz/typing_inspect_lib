@@ -1,6 +1,10 @@
 # pylint: disable=invalid-name
+"""Interface to :mod:`collections.abc`."""
 
-import collections
+try:
+    import collections.abc as _collections
+except ImportError:
+    import collections as _collections
 import contextlib
 import sys
 import types
@@ -46,11 +50,6 @@ __all__ = [
     'AbstractContextManager',
     'AbstractAsyncContextManager',
 ]
-
-if _VERSION < (3, 3, 0):
-    _collections = collections
-else:
-    _collections = collections.abc
 
 Container = _collections.Container
 Hashable = _collections.Hashable

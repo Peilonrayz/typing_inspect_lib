@@ -1,3 +1,5 @@
+"""Interface to :mod:`typing`."""
+
 # pylint: disable=invalid-name
 
 import sys
@@ -8,6 +10,8 @@ except ImportError:
     _HAS_TE = False
 else:
     _HAS_TE = True
+
+from .helpers import gen_type as _gen_type
 
 _VERSION = sys.version_info[:3]
 _PY35 = _VERSION[:2] == (3, 5)
@@ -23,10 +27,6 @@ __all__ = [
     'ProtocolMeta',
     '_Union',
 ]
-
-
-def _gen_type(name):
-    return type(name, (object,), {'__repr__': lambda self: name})
 
 
 if _HAS_TE:

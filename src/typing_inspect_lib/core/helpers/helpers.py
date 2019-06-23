@@ -1,3 +1,5 @@
+"""Common helper functions."""
+
 import itertools
 import sys
 
@@ -11,6 +13,7 @@ __all__ = [
     'safe_dict_contains',
     'safe_getattr_tuple',
     'pairwise',
+    'gen_type',
 ]
 
 VERSION = sys.version_info[:3]
@@ -22,6 +25,7 @@ _SENTINEL = object()
 
 
 def safe_dict_get(dict_, key, default=None):
+    """Get value from dictionary safely."""
     try:
         value = dict_.get(key, _SENTINEL)
     except TypeError:
@@ -34,6 +38,7 @@ def safe_dict_get(dict_, key, default=None):
 
 # pylint: disable=too-many-branches
 def safe_dict_get_both(dict_, key, default=None, inv=False):
+    """Get value from dict and inverted dict."""
     try:
         value = dict_.get(key, _SENTINEL)
     except TypeError:
@@ -55,6 +60,7 @@ def safe_dict_get_both(dict_, key, default=None, inv=False):
 
 
 def safe_dict_contains(dict_, key):
+    """See if key is contained in dict, errors silently."""
     try:
         return key in dict_
     except TypeError:
@@ -62,6 +68,7 @@ def safe_dict_contains(dict_, key):
 
 
 def safe_getattr_tuple(type_, key):
+    """Get attribute from type, defaulting to empty tuple."""
     try:
         return tuple(getattr(type_, key, None) or [])
     except TypeError:
@@ -69,6 +76,16 @@ def safe_getattr_tuple(type_, key):
 
 
 def pairwise(it):  # pylint: disable=invalid-name
+    """
+    Perform s -> (s0,s1), (s1,s2), (s2, s3), ...
+
+    Duplicate of the :mod:`itertools` recipe.
+    """
     a, b = itertools.tee(it)  # pylint: disable=invalid-name
     next(b, None)
     return zip(a, b)
+
+
+def gen_type(name):
+    """Create a new type, with a repr."""
+    return type(name, (object,), {'__repr__': lambda self: name})

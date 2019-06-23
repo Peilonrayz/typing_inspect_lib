@@ -1,3 +1,5 @@
+"""Get typing."""
+
 import types
 import typing
 
@@ -10,19 +12,6 @@ from .helpers import (
 
 if PY_OLD:
     def _get_typing(type_):
-        """
-        Returns the typing type and class type of a wrapped or unwrapped type.
-
-        This function doesn't work special types, these require another function to
-        extract the information correctly. Builtin {literal types, class types,
-        typing types} all are handled before this function runs.
-
-        Example:
-
-            _get_typing(Mapping[str, int]) == (Mapping, collections.abc.Mapping)
-            _get_typing(MyClass) == (MyClass, MyClass)
-            _get_typing(MyClass[str, int]) == (MyClass, MyClass)
-        """
         origin = _get_last_origin(type_)
         if origin is not None:
             return origin, safe_dict_get(TYPING_OBJECTS.typing, origin) or origin
@@ -39,10 +28,40 @@ else:
         if hasattr(type_, '__orig_bases__'):
             return type_, type_
         return None
+_get_typing.__doc__ = """
+Return the typing type and class type of a wrapped or unwrapped type.
+
+This function doesn't work special types, these require another function to
+extract the information correctly. Builtin {literal types, class types,
+typing types} all are handled before this function runs.
+
+.. testsetup::
+
+    from typing_inspect_lib.core.get_typing import _get_typing
+
+.. doctest::
+
+    >>> class MyClass(Generic[TKey, TValue]): pass
+
+    >>> _get_typing(Mapping[str, int])
+    (typing.Mapping, <class 'collections.abc.Mapping'>)
+    >>> _get_typing(MyClass)
+    (<class 'MyClass'>, <class 'MyClass'>)
+    >>> _get_typing(MyClass[str, int])
+    (<class 'MyClass'>, <class 'MyClass'>)
+"""
 
 
 def _get_special_typing_universal(type_):
-    """Handles the following types for wrapped types: TypeVar, Protocol, NewType"""
+    """
+    Handle universal types.
+
+    Currently handles the following types:
+
+     - :class:`typing.TypeVar`,
+     - :func:`typing.NewType`,
+     - :class:`typing_extensions.Protocol`.
+    """
     if isinstance(type_, typing.TypeVar):
         return typing.TypeVar, type_
     if isinstance(type_, typing_.ProtocolMeta):
@@ -54,22 +73,29 @@ def _get_special_typing_universal(type_):
 
 if PY_OLD:
     def _get_special_typing(type_):
-        """Handles special types that can't be handled through normal means."""
         return get_special_wrapped(type_)
 else:
     def _get_special_typing(type_):
         return None
+_get_special_typing.__doc__ = """\
+Handle special types that can't be handled through normal means."""
 
 
 def get_typing(type_):
     """
-    Gets the typing type and the class type of the type passed to it.
+    Get the typing type and the class type of the type passed to it.
 
-    Examples:
+    .. doctest::
 
-        get_typing(Mapping) == (Mapping, collections.abc.Mapping)
-        get_typing(Mapping[str, int]) == (Mapping, collections.abc.Mapping)
-        get_typing(Union[str, int]) == (Union, Union)
+        >>> get_typing(Mapping)
+        (typing.Mapping, <class 'collections.abc.Mapping'>)
+        >>> get_typing(Mapping[str, int])
+        (typing.Mapping, <class 'collections.abc.Mapping'>)
+
+        # Not all types have different typing and class types.
+        >>> get_typing(Union[str, int])
+        (typing.Union, typing.Union)
+
     """
     ret = (
         _get_special_typing_universal(type_)

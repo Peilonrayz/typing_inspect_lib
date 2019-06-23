@@ -1,3 +1,5 @@
+"""Get type info."""
+
 import collections
 
 from .get_args import _get_args
@@ -15,14 +17,19 @@ def get_type_info(type_):
     """
     Get all the type information for a type.
 
-    Examples:
+    .. doctest::
 
-        type_ = get_type_info(Mapping[TKey, int])
-        type_ == (Mapping, collections.abc.Mapping, (int,), (TKey,))
-        type_.typing == Mapping
-        type_.class_ == collections.abc.Mapping
-        type_.args == (int,)
-        type_.parameters == (TKey,)
+        >>> type_ = get_type_info(Mapping[TKey, int])
+        >>> type_
+        TypeInfo(typing=typing.Mapping, class_=<class 'collections.abc.Mapping'>, args=(~TKey, <class 'int'>), parameters=(~TKey,))
+        >>> type_.typing
+        typing.Mapping
+        >>> type_.class_
+        <class 'collections.abc.Mapping'>
+        >>> type_.args
+        (~TKey, <class 'int'>)
+        >>> type_.parameters
+        (~TKey,)
     """
     t_typing, class_ = get_typing(type_)
     if t_typing is None and class_ is None:

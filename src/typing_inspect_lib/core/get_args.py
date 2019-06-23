@@ -1,3 +1,5 @@
+"""Get arguments."""
+
 import typing
 
 from .get_base_type import get_base_type
@@ -11,7 +13,6 @@ from .helpers import (
 if PY_35 and VERSION <= (3, 5, 2):  # noqa: MC0001
     # pylint: disable=too-many-return-statements
     def _handle_special_type(type_, t_typing):
-        """Get args for types that can't be handled via normal means."""
         if is_special(t_typing):
             if t_typing is typing_.ClassVar:
                 return (type_.__type__,) if type_.__type__ is not None else ()
@@ -33,6 +34,11 @@ elif PY_OLD:
         if t_typing is typing.ClassVar:
             return (type_.__type__,) if type_.__type__ is not None else ()
         return None
+else:
+    def _handle_special_type(type_, t_typing):
+        pass
+_handle_special_type.__doc__ = """\
+Get args for types that can't be handled via normal means."""
 
 
 def _parameters_link(args, parameters):
@@ -46,7 +52,6 @@ def _parameters_link(args, parameters):
 
 if PY_35 and VERSION <= (3, 5, 1):
     def _handle_origin(type_):
-        """Get arguments of provided type based on the origins of the type."""
         if getattr(type_, '__origin__', None) is not None:
             return safe_getattr_tuple(type_, '__parameters__')
         return None
@@ -61,6 +66,11 @@ elif PY_OLD:
             for link, arg in zip(links, safe_getattr_tuple(origin, '__args__')):
                 args[link] = arg
         return tuple(args)
+else:
+    def _handle_origin(type_):
+        pass
+_handle_origin.__doc__ = """\
+Get arguments of provided type based on the origins of the type."""
 
 
 SENTINEL = object()
@@ -88,15 +98,24 @@ else:
         if base:
             return ()
         return getattr(type_, '__args__', None) or ()
+_get_args.__doc__ = """\
+Get the arguments stored in the type provided.
+
+Works the same way :func:`typing_inspect_lib.get_args` does.
+"""
 
 
 def get_args(type_):
-    """Get the arguments stored in the type provided.
+    """
+    Get the arguments stored in the type provided.
 
-    Examples:
+    .. doctest::
 
-        get_args(Mapping) == ()
-        get_args(Mapping[str, int]) == (str, int)
-        get_args(Mapping[Union[str, int], int]) == (Union, Union)
+        >>> get_args(Mapping)
+        ()
+        >>> get_args(Mapping[str, int])
+        (<class 'str'>, <class 'int'>)
+        >>> get_args(Mapping[Union[str, int], int])
+        (typing.Union[str, int], <class 'int'>)
     """
     return _get_args(type_)

@@ -5,6 +5,7 @@ verify_ssl = true
 
 [dev-packages]
 tox = "*"
+mypy = "*"
 
 [packages]
 typing = "*"

@@ -1,3 +1,5 @@
+"""Extra functions."""
+
 __all__ = [
     'get_bases',
     'get_type_var_info',

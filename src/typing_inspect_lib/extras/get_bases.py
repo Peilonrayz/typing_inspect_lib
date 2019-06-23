@@ -1,3 +1,5 @@
+"""Get bases."""
+
 import collections
 
 from ..core import get_parameters, get_type_info, get_typing
@@ -10,7 +12,7 @@ _BaseObj = collections.namedtuple('BaseObj', ['typing', 'class_', 'orig'])
 
 
 def _get_bases_typing(type_):
-    """Get the bases of type, where the types bases are typing types"""
+    """Get the bases of type, where the types bases are typing types."""
     bases = safe_getattr_tuple(type_, '__bases__')
     if not bases:
         return None
@@ -24,7 +26,7 @@ def _get_bases_typing(type_):
 
 
 def _get_bases_class(type_):
-    """Get the bases of type, where the types bases are class types"""
+    """Get the bases of type, where the types bases are class types."""
     bases = safe_getattr_tuple(type_, '__bases__')
     if not bases:
         return None
@@ -39,7 +41,6 @@ def _get_bases_class(type_):
 
 if PY_35 and VERSION <= (3, 5, 2):
     def _get_bases_default(type_):
-        """Get the bases of type. Returns both typing type and class type."""
         bases = _bases(type_)
         if bases is None:
             return None
@@ -52,6 +53,7 @@ elif PY_OLD:
             return _get_bases_typing(type_)
 else:
     def _get_bases_default(type_):
+        """Get the bases of type. Returns both typing type and class type."""
         return _get_bases_class(type_)
 
 
@@ -79,6 +81,7 @@ if PY_35 and VERSION <= (3, 5, 2):  # noqa: MC0001
         return mro
 else:
     def _bases(type_):
+        """Get bases from the type."""
         base_defaults = _get_bases_default(type_)
         if base_defaults is None:
             return ()
@@ -114,15 +117,18 @@ else:
 
 def get_bases(type_):
     """
-    Gets the bases of the type, returns the typing type, class type and orig type.
+    Get the bases of the type, return the typing type, class type and orig type.
 
     Examples (Python 3.7):
 
-        get_bases(Mapping) == ((typing.Collection, abc.Collection, None),)
-        get_bases(abc.Mapping) == ((typing.Collection, abc.Collection, None),)
-        get_bases(Mapping[int, int]) == (
-            (typing.Collection, abc.Collection, typing.Collection[int]),
-        )
+    .. doctest::
+
+        >>> get_bases(Mapping)
+        (BaseObj(typing=typing.Collection, class_=<class 'collections.abc.Collection'>, orig=None),)
+        >>> get_bases(abc.Mapping)
+        (BaseObj(typing=typing.Collection, class_=<class 'collections.abc.Collection'>, orig=None),)
+        >>> get_bases(Mapping[int, int])
+        (BaseObj(typing=typing.Collection, class_=<class 'collections.abc.Collection'>, orig=typing.Collection[int]),)
     """
     type_info = get_type_info(type_)
     if type_info is None:

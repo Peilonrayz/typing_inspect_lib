@@ -1,3 +1,5 @@
+"""Get MRO."""
+
 from ..core import get_typing
 from ..core.helpers import (
     PY_35, PY_OLD, VERSION, safe_getattr_tuple,
@@ -5,6 +7,7 @@ from ..core.helpers import (
 
 
 def _get_mro_conv_dedupe(mro):
+    """Merge MRO in correct order."""
     collection_mro = iter(
         get_typing(obj)[1] or obj
         for obj in reversed(mro)
@@ -19,6 +22,7 @@ def _get_mro_conv_dedupe(mro):
 
 
 def _from_types(types, index=1):
+    """Convert to typing types."""
     mro = ()
     for type_ in types:
         typing = get_typing(type_)[index]
@@ -34,29 +38,29 @@ elif PY_OLD:
         return _get_mro_conv_dedupe(safe_getattr_tuple(type_, '__mro__'))
 else:
     def _get_mro(type_):
+        """Get MRO."""
         return safe_getattr_tuple(type_, '__mro__')
 
 
 def get_mro(type_):
     """
-    Gets the mro of the type. Returning them as class types.
+    Get the mro of the type. Returning them as class types.
 
     Builtin types are converted to their class type to get the MRO
     and so `Generic` is missing.
 
     Example:
 
-        mro = (
-            abc.Mapping,
-            abc.Collection,
-            abc.Sized,
-            abc.Iterable,
-            abc.Container,
-            object
-        )
-        get_mro(Mapping) == mro
-        get_mro(abc.Mapping) == mro
-        get_mro(Mapping[int, str]) == mro
+    .. doctest::
+
+        >>> mro = (abc.Mapping, abc.Collection, abc.Sized, abc.Iterable, abc.Container, object)
+
+        >>> get_mro(Mapping) == mro
+        True
+        >>> get_mro(abc.Mapping) == mro
+        True
+        >>> get_mro(Mapping[int, str]) == mro
+        True
     """
     _, typing = get_typing(type_)
     return _get_mro(typing or type_)

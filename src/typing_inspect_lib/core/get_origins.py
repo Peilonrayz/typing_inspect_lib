@@ -1,5 +1,8 @@
+"""Get origins."""
+
+
 def _get_origins(type_):
-    """Gets all origins. Includes passed type."""
+    """Get all origins, includes passed type."""
     origins = [type_]
     if hasattr(type_, '__origin__'):
         while getattr(type_, '__origin__', None) is not None:
@@ -9,7 +12,7 @@ def _get_origins(type_):
 
 
 def _get_last_origin(type_):
-    """Gets the last origin. Same as `__origin__` in Python 3.7"""
+    """Get the last origin. Same as :code:`__origin__` in Python 3.7."""
     if hasattr(type_, '_gorg'):
         return type_._gorg
 

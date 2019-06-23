@@ -1,3 +1,5 @@
+"""Get parameters."""
+
 import typing
 
 from .get_args import get_args
@@ -32,15 +34,18 @@ elif PY_OLD:
 else:
     def _get_parameters(type_, t_typing=SENTINEL):
         return safe_getattr_tuple(type_, '__parameters__')
+_get_parameters.__doc__ = """Get parameters."""
 
 
 def get_parameters(type_):
     """
-    Gets the parameters of the type provided.
+    Get the parameters from the type provided.
 
-    Examples:
+    .. doctest::
 
-        get_parameters(Mapping[str, int]) == ()
-        get_parameters(Mapping[TKey, TValue]) == (TKey, TValue)
+        >>> get_parameters(Mapping[str, int])
+        ()
+        >>> get_parameters(Mapping[TKey, TValue])
+        (~TKey, ~TValue)
     """
     return _get_parameters(type_)

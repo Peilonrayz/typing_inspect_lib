@@ -1,3 +1,5 @@
+"""Interface to :mod:`re`."""
+
 import re
 import sre_compile  # noqa: I201
 
