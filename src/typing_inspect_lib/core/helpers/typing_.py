@@ -41,7 +41,11 @@ if _VERSION == (3, 5, 0) or not _HAS_TE:
     ProtocolMeta = _gen_type('ProtocolMeta')
 else:
     Protocol = typing_extensions.Protocol
-    ProtocolMeta = typing_extensions._ProtocolMeta
+    ProtocolMeta = getattr(
+        typing_extensions,
+        '_ProtocolMeta',
+        _gen_type('ProtocolMeta'),
+    )
 
 if _PY35 and _VERSION <= (3, 5, 2):
     if _HAS_TE:
