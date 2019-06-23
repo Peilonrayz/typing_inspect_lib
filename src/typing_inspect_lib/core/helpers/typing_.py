@@ -34,7 +34,7 @@ if _HAS_TE:
 else:
     NewType = _gen_type('NewType')()
 
-BaseProtocol = _gen_type('BaseProtocol')()
+BaseProtocol = getattr(typing, 'Protocol', _gen_type('BaseProtocol')())
 
 if _VERSION == (3, 5, 0) or not _HAS_TE:
     Protocol = _gen_type('Protocol')()
