@@ -38,11 +38,9 @@ Please look at :ref:`python-compatibility` to see which are known.
 """
 
 from .core import get_args, get_parameters, get_type_info, get_typing
-from .core.helpers.typing_ import (
-    BaseProtocol as BaseProtocol_,
-    ClassVar as ClassVar_,
-    NewType as NewType_,
-    Protocol as Protocol_,
+from .core.helpers import (
+    typing as _typing,
+    typing_extensions as _typing_extensions,
 )
 from .extras import get_bases, get_mro, get_mro_orig, get_type_var_info
 
@@ -65,3 +63,9 @@ __all__ = [
     'Protocol_',
     'BaseProtocol_',
 ]
+
+NewType_ = _typing_extensions.NewType
+Protocol_ = _typing_extensions.Protocol
+
+ClassVar_ = _typing._ClassVar
+BaseProtocol_ = _typing.Protocol

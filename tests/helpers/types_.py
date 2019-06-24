@@ -3,7 +3,7 @@ import typing
 from typing_inspect_lib import get_type_info, get_type_var_info
 from typing_inspect_lib.core.get_type_info import _TypeInfo
 from typing_inspect_lib.core.helpers import LITERAL_TYPES, safe_dict_contains
-from typing_inspect_lib.core.helpers import typing_
+from typing_inspect_lib.core.helpers import typing_extensions
 
 __all__ = [
     'Type',
@@ -26,7 +26,7 @@ def build_types(type_):
     if safe_dict_contains(LITERAL_TYPES, type_info.typing):
         return type_info.typing
 
-    if type_info.typing is typing_.NewType:
+    if type_info.typing is typing_extensions.NewType:
         return type_info.class_
 
     return Type(

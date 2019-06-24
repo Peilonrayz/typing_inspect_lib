@@ -6,7 +6,7 @@ import typing
 from .get_origins import _get_last_origin
 from .helpers import (
     LITERAL_TYPES, PY_OLD, TYPING_OBJECTS, get_special_wrapped,
-    safe_dict_get, safe_dict_get_both, typing_,
+    safe_dict_get, safe_dict_get_both, typing_extensions
 )
 
 
@@ -64,10 +64,10 @@ def _get_special_typing_universal(type_):
     """
     if isinstance(type_, typing.TypeVar):
         return typing.TypeVar, type_
-    if isinstance(type_, typing_.ProtocolMeta):
-        return typing_.Protocol, type_
+    if isinstance(type_, typing_extensions._ProtocolMeta):
+        return typing_extensions.Protocol, type_
     if isinstance(type_, types.FunctionType) and hasattr(type_, '__supertype__'):
-        return typing_.NewType, type_
+        return typing_extensions.NewType, type_
     return None
 
 
@@ -108,6 +108,6 @@ def get_typing(type_):
     if ret is None:
         return None, None
     type_type, class_type = ret
-    if type_type is typing_.NewType:
+    if type_type is typing_extensions.NewType:
         class_type = type_
     return type_type, class_type

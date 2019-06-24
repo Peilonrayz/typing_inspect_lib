@@ -6,7 +6,7 @@ from .get_base_type import get_base_type
 from .get_origins import _get_origins
 from .get_typing import get_typing
 from .helpers import (
-    PY_35, PY_OLD, VERSION, is_special, safe_getattr_tuple, typing_,
+    PY_35, PY_OLD, VERSION, is_special, safe_getattr_tuple, typings
 )
 
 # TODO: reduce complexity
@@ -14,7 +14,7 @@ if PY_35 and VERSION <= (3, 5, 2):  # noqa: MC0001
     # pylint: disable=too-many-return-statements
     def _handle_special_type(type_, t_typing):
         if is_special(t_typing):
-            if t_typing is typing_.ClassVar:
+            if t_typing is typings.ClassVar:
                 return (type_.__type__,) if type_.__type__ is not None else ()
             if t_typing is typing.Callable:
                 args = type_.__args__

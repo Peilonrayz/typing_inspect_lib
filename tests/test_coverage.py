@@ -23,7 +23,7 @@ from typing_inspect_lib.core.helpers import re
 from typing_inspect_lib.core.helpers import (
     safe_dict_contains, safe_dict_get, safe_dict_get_both, safe_getattr_tuple,
 )
-from typing_inspect_lib.core.helpers import typing_
+from typing_inspect_lib.core.helpers import (typing)
 
 VERSION = sys.version_info[:3]
 
@@ -42,7 +42,7 @@ class BaseClassesTestCase(TestCase):
         for test in tests:
             self.assertEqual(
                 get_base_type(test),
-                (typing_.BaseProtocol, True),
+                (typing.Protocol, True),
                 msg=str(test),
             )
 
@@ -77,11 +77,11 @@ class BaseClassesTestCase(TestCase):
         if VERSION < (3, 6):
             self.assertEqual(
                 get_base_type(typing.Reversible),
-                (typing_.BaseProtocol, True),
+                (typing.Protocol, True),
             )
             self.assertEqual(
                 get_base_type(typing.Reversible[int]),
-                (typing_.BaseProtocol, False),
+                (typing.Protocol, False),
             )
         else:
             self.assertEqual(

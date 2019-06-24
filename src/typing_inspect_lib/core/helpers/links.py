@@ -4,16 +4,13 @@ import collections
 import json
 import operator
 import os.path
-import typing
 
 try:
     import typing_extensions  # noqa: F401 This is used by _read_globals
 except ImportError:
     pass
 
-from . import abc
-from . import re
-from . import typing_
+from .compatability import re, abc, typing, typings
 from .helpers import PY350_2, PY_OLD, VERSION, safe_dict_get, safe_dict_get_both
 
 __all__ = [
@@ -148,13 +145,13 @@ for from_, to in _CHANGES:
 _SPECIAL_CONV = {
     (typing.CallableMeta if PY_OLD else collections.abc.Callable):
         SPECIAL_OBJECTS_WRAPPED.typing_to_class[typing.Callable],
-    (typing_.ClassVarMeta if PY350_2 else typing_._ClassVar):
-        typing_.ClassVar,
+    (typings._ClassVarMeta if PY350_2 else typing._ClassVar):
+        typings.ClassVar,
     (typing.OptionalMeta if PY350_2 else typing.Optional):
         typing.Optional,
     (typing.TupleMeta if PY_OLD else tuple):
         SPECIAL_OBJECTS_WRAPPED.typing_to_class[typing.Tuple],
-    (typing.UnionMeta if PY350_2 else typing_._Union):
+    (typing.UnionMeta if PY350_2 else typing._Union):
         typing.Union,
 }
 

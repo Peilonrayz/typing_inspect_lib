@@ -13,7 +13,8 @@ else:
     _HAS_TE = True
 
 from typing_inspect_lib.core.helpers import abc as _abc
-from typing_inspect_lib.core.helpers import re
+from typing_inspect_lib.core.helpers import contextlib as _contextlib
+from typing_inspect_lib.core.helpers import re, typing_extensions as typing_extensions_
 
 from .helpers import types_
 from .helpers.build_types import _build_tests
@@ -50,7 +51,16 @@ class BaseTestCase(TestCase):
         elif type_class is Types.VAR_TYPE:
             self.assertEqual(types_.build_types(type_), types_.VarType(type_))
         elif type_class is Types.NEW_TYPE:
-            self.assertEqual(types_.build_types(type_), type_)
+            output = types_.build_types(type_)
+            try:
+                self.assertEqual(output, type_)
+            except AssertionError:
+                print(output)
+                print(output.typing)
+                print(typing_extensions_.NewType)
+                print(typing_extensions.NewType)
+                print(output.typing is typing_extensions_.NewType)
+                raise
         elif type_class is Types.NONE:
             self.assertEqual(types_.build_types(type_), None)
 
@@ -217,7 +227,7 @@ class ABCTestCase(BaseTestCase):
         self.class_test(
             typing.ContextManager,
             typing.ContextManager,
-            _abc.AbstractContextManager,
+            _contextlib.AbstractContextManager,
             [TValue],
             [int],
             [T_co],
@@ -447,7 +457,7 @@ class ABCTestCase(BaseTestCase):
         self.class_test(
             typing.AsyncContextManager,
             typing.AsyncContextManager,
-            _abc.AbstractAsyncContextManager,
+            _contextlib.AbstractAsyncContextManager,
             [TValue],
             [int],
             [T_co],
@@ -758,7 +768,7 @@ class ExtensionsTestCase(BaseTestCase):
         self.class_test(
             typing_extensions.ContextManager,
             typing_extensions.ContextManager,
-            _abc.AbstractContextManager,
+            _contextlib.AbstractContextManager,
             [TValue],
             [int],
             [T_co],
@@ -830,7 +840,7 @@ class ExtensionsTestCase(BaseTestCase):
         self.class_test(
             typing_extensions.AsyncContextManager,
             typing_extensions.AsyncContextManager,
-            _abc.AbstractAsyncContextManager,
+            _contextlib.AbstractAsyncContextManager,
             [TValue],
             [int],
             [T_co],
