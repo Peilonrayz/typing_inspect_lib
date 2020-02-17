@@ -5,16 +5,14 @@ import typing
 from .get_base_type import get_base_type
 from .get_origins import _get_origins
 from .get_typing import get_typing
-from .helpers import (
-    PY_35, PY_OLD, VERSION, is_special, safe_getattr_tuple, typings
-)
+from .helpers import compatibility, helpers, links
 
 # TODO: reduce complexity
-if PY_35 and VERSION <= (3, 5, 2):  # noqa: MC0001
+if helpers.PY_35 and helpers.VERSION <= (3, 5, 2):  # noqa: MC0001
     # pylint: disable=too-many-return-statements
     def _handle_special_type(type_, t_typing):
-        if is_special(t_typing):
-            if t_typing is typings.ClassVar:
+        if links.is_special(t_typing):
+            if t_typing is compatibility.typings.ClassVar:
                 return (type_.__type__,) if type_.__type__ is not None else ()
             if t_typing is typing.Callable:
                 args = type_.__args__
@@ -29,7 +27,7 @@ if PY_35 and VERSION <= (3, 5, 2):  # noqa: MC0001
             if t_typing is typing.Tuple:
                 return type_.__tuple_params__ or ()
         return None
-elif PY_OLD:
+elif helpers.PY_OLD:
     def _handle_special_type(type_, t_typing):
         if t_typing is typing.ClassVar:
             return (type_.__type__,) if type_.__type__ is not None else ()
@@ -50,20 +48,20 @@ def _parameters_link(args, parameters):
     return [next(args_.get(p, iter([p]))) for p in parameters]
 
 
-if PY_35 and VERSION <= (3, 5, 1):
+if helpers.PY_35 and helpers.VERSION <= (3, 5, 1):
     def _handle_origin(type_):
         if getattr(type_, '__origin__', None) is not None:
-            return safe_getattr_tuple(type_, '__parameters__')
+            return helpers.safe_getattr_tuple(type_, '__parameters__')
         return None
-elif PY_OLD:
+elif helpers.PY_OLD:
     def _handle_origin(type_):
         origins = _get_origins(type_)
         origin, origins = origins[0], origins[1:]
-        args = list(safe_getattr_tuple(origin, '__args__'))
+        args = list(helpers.safe_getattr_tuple(origin, '__args__'))
         for origin_ in origins:
-            links = _parameters_link(args, safe_getattr_tuple(origin, '__parameters__'))
+            links = _parameters_link(args, helpers.safe_getattr_tuple(origin, '__parameters__'))
             origin = origin_
-            for link, arg in zip(links, safe_getattr_tuple(origin, '__args__')):
+            for link, arg in zip(links, helpers.safe_getattr_tuple(origin, '__args__')):
                 args[link] = arg
         return tuple(args)
 else:
@@ -76,7 +74,7 @@ Get arguments of provided type based on the origins of the type."""
 SENTINEL = object()
 
 
-if PY_OLD:
+if helpers.PY_OLD:
     def _get_args(type_, t_typing=SENTINEL):
         if type(type_) is typing._TypeAlias:  # pylint: disable=unidiomatic-typecheck
             return (type_.type_var,)

@@ -18,12 +18,14 @@ except ImportError:
 from typing_inspect_lib import get_type_info, get_type_var_info
 from typing_inspect_lib.core.get_base_type import get_base_type
 from typing_inspect_lib.core.get_type_info import _TypeInfo
-from typing_inspect_lib.core.helpers import abc
-from typing_inspect_lib.core.helpers import re
-from typing_inspect_lib.core.helpers import (
-    safe_dict_contains, safe_dict_get, safe_dict_get_both, safe_getattr_tuple,
+from typing_inspect_lib.core.helpers.helpers import (
+    safe_contains, safe_dict_get, safe_dict_get_both, safe_getattr_tuple,
 )
-from typing_inspect_lib.core.helpers import (typing)
+from typing_inspect_lib.core.helpers.compatibility import (
+    abc,
+    re,
+    typing,
+)
 
 VERSION = sys.version_info[:3]
 
@@ -117,14 +119,14 @@ class TypeInfoTestCase(TestCase):
 
     def test_not_equal_class(self):
         tests = [
-            _TypeInfo(1, abc.Mapping, (), ()),
-            _TypeInfo(1, re.Pattern, (), ()),
-            _TypeInfo(1, re.Match, (), ()),
+            _TypeInfo(1, abc.Mapping, None, (), ()),
+            _TypeInfo(1, re.Pattern, None, (), ()),
+            _TypeInfo(1, re.Match, None, (), ()),
         ]
         if HAS_CLASS_VAR:
-            tests.append(_TypeInfo(1, ClassVar, (), ()))
+            tests.append(_TypeInfo(1, ClassVar, None, (), ()))
         if HAS_PROTOCOL:
-            tests.append(_TypeInfo(1, Protocol, (), ()))
+            tests.append(_TypeInfo(1, Protocol, None, (), ()))
 
         for test_a, test_b in itertools.permutations(tests, 2):
             self.assertNotEqual(test_a, test_b)
@@ -154,7 +156,7 @@ class SafeHelpersTestCase(TestCase):
         self.assertIs(safe_dict_get_both(Test(), True, self.SENTINEL), self.SENTINEL)
 
     def test_dict_contains(self):
-        self.assertFalse(safe_dict_contains({}, {}))
+        self.assertFalse(safe_contains({}, {}))
 
     def test_getattr_tuple(self):
         self.assertEqual(safe_getattr_tuple(object(), '__404__'), ())

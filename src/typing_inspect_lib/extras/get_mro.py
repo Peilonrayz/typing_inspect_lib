@@ -1,9 +1,7 @@
 """Get MRO."""
 
 from ..core import get_typing
-from ..core.helpers import (
-    PY_35, PY_OLD, VERSION, safe_getattr_tuple,
-)
+from ..core.helpers import helpers
 
 
 def _get_mro_conv_dedupe(mro):
@@ -30,16 +28,16 @@ def _from_types(types, index=1):
     return mro
 
 
-if PY_35 and VERSION <= (3, 5, 2):
+if helpers.PY_35 and helpers.VERSION <= (3, 5, 2):
     def _get_mro(type_):
-        return _get_mro_conv_dedupe(_from_types(safe_getattr_tuple(type_, '__mro__')))
-elif PY_OLD:
+        return _get_mro_conv_dedupe(_from_types(helpers.safe_getattr_tuple(type_, '__mro__')))
+elif helpers.PY_OLD:
     def _get_mro(type_):
-        return _get_mro_conv_dedupe(safe_getattr_tuple(type_, '__mro__'))
+        return _get_mro_conv_dedupe(helpers.safe_getattr_tuple(type_, '__mro__'))
 else:
     def _get_mro(type_):
         """Get MRO."""
-        return safe_getattr_tuple(type_, '__mro__')
+        return helpers.safe_getattr_tuple(type_, '__mro__')
 
 
 def get_mro(type_):

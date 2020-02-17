@@ -4,16 +4,14 @@ import collections
 
 from ..core import get_parameters, get_type_info, get_typing
 from ..core.get_type_info import _TypeInfo
-from ..core.helpers import (
-    PY_35, PY_OLD, VERSION, is_typing, safe_getattr_tuple,
-)
+from ..core.helpers import helpers, links
 
-_BaseObj = collections.namedtuple('BaseObj', ['typing', 'class_', 'orig'])
+_BaseObj = collections.namedtuple('BaseObj', ['unwrapped', 'origin', 'orig'])
 
 
 def _get_bases_typing(type_):
     """Get the bases of type, where the types bases are typing types."""
-    bases = safe_getattr_tuple(type_, '__bases__')
+    bases = helpers.safe_getattr_tuple(type_, '__bases__')
     if not bases:
         return None
     return tuple(
@@ -27,7 +25,7 @@ def _get_bases_typing(type_):
 
 def _get_bases_class(type_):
     """Get the bases of type, where the types bases are class types."""
-    bases = safe_getattr_tuple(type_, '__bases__')
+    bases = helpers.safe_getattr_tuple(type_, '__bases__')
     if not bases:
         return None
     return tuple(
@@ -39,15 +37,15 @@ def _get_bases_class(type_):
     )
 
 
-if PY_35 and VERSION <= (3, 5, 2):
+if helpers.PY_35 and helpers.VERSION <= (3, 5, 2):
     def _get_bases_default(type_):
         bases = _bases(type_)
         if bases is None:
             return None
-        return tuple((i.typing, i.class_) for i in bases)
-elif PY_OLD:
+        return tuple((i.unwrapped, i.origin) for i in bases)
+elif helpers.PY_OLD:
     def _get_bases_default(type_):
-        if is_typing(type_):
+        if links.is_typing(type_):
             return _get_bases_class(type_)
         else:
             return _get_bases_typing(type_)
@@ -58,11 +56,11 @@ else:
 
 
 # TODO: reduce complexity
-if PY_35 and VERSION <= (3, 5, 2):  # noqa: MC0001
+if helpers.PY_35 and helpers.VERSION <= (3, 5, 2):  # noqa: MC0001
     def _bases(type_):
-        t_typing, _ = get_typing(type_)
-        type_ = t_typing or type_
-        origins = safe_getattr_tuple(type_, '__bases__')
+        u_type, _ = get_typing(type_)
+        type_ = u_type or type_
+        origins = helpers.safe_getattr_tuple(type_, '__bases__')
         if not origins:
             return ()
         mro = ()
@@ -70,12 +68,12 @@ if PY_35 and VERSION <= (3, 5, 2):  # noqa: MC0001
             type_info = get_type_info(orig)
             if type_info is None:
                 if orig is object:
-                    type_info = _TypeInfo(orig, orig, (), ())
+                    type_info = _TypeInfo(orig, orig, None, (), ())
                 else:
                     raise ValueError('invalid origin type {0} {1}'.format(type_, orig))
             mro += (_BaseObj(
-                type_info.typing,
-                type_info.class_,
+                type_info.unwrapped,
+                type_info.origin,
                 orig if len(type_info.args) > len(type_info.parameters) else None,
             ),)
         return mro
@@ -87,24 +85,24 @@ else:
             return ()
 
         orig_bases = {}
-        for base in safe_getattr_tuple(type_, '__orig_bases__'):
-            _, class_ = get_typing(base)
-            orig_bases.setdefault(class_, []).append(base)
+        for base in helpers.safe_getattr_tuple(type_, '__orig_bases__'):
+            _, o_type = get_typing(base)
+            orig_bases.setdefault(o_type, []).append(base)
 
         orig_bases = {k: iter(v) for k, v in orig_bases.items()}
 
         sentinel = object()
         bases = ()
-        for typing_, class_ in base_defaults:
-            if class_ not in orig_bases:
-                bases += (_BaseObj(typing_, class_, None),)
+        for u_type, o_type in base_defaults:
+            if o_type not in orig_bases:
+                bases += (_BaseObj(u_type, o_type, None),)
                 continue
-            base = next(orig_bases[class_], sentinel)
+            base = next(orig_bases[o_type], sentinel)
             if base is sentinel:
-                del orig_bases[class_]
-                bases += (_BaseObj(typing_, class_, None),)
+                del orig_bases[o_type]
+                bases += (_BaseObj(u_type, o_type, None),)
             else:
-                bases += (_BaseObj(typing_, class_, base),)
+                bases += (_BaseObj(u_type, o_type, base),)
 
         left_over = [i for lst in orig_bases.values() for i in lst]
         if left_over:
@@ -135,20 +133,20 @@ def get_bases(type_):
         return _bases(type_)
     if (
         not type_info.args
-        or not is_typing(type_info.class_)
+        or not links.is_typing(type_info.origin)
     ):
-        return _bases(type_info.class_)
+        return _bases(type_info.origin)
     bases = ()
-    for base in _bases(type_info.class_):
-        if not is_typing(base.class_):
+    for base in _bases(type_info.origin):
+        if not links.is_typing(base.origin):
             bases += (base,)
         else:
-            parameters = get_parameters(base.typing)
+            parameters = get_parameters(base.unwrapped)
             if parameters:
                 bases += (_BaseObj(
-                    base.typing,
-                    base.class_,
-                    base.typing[type_info.args[:len(parameters)]],
+                    base.unwrapped,
+                    base.origin,
+                    base.unwrapped[type_info.args[:len(parameters)]],
                 ),)
             else:
                 bases += (base,)

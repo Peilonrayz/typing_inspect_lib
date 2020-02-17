@@ -38,7 +38,7 @@ Please look at :ref:`python-compatibility` to see which are known.
 """
 
 from .core import get_args, get_parameters, get_type_info, get_typing
-from .core.helpers import (
+from .core.helpers.compatibility import (
     typing as _typing,
     typing_extensions as _typing_extensions,
 )

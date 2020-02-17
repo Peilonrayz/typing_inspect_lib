@@ -39,6 +39,10 @@ except ImportError:
     pass
 from typing import *
 try:
+    from typing_extensions import *
+except ImportError:
+    pass
+try:
     import collections.abc as abc
 except ImportError:
     import collections as abc
@@ -46,7 +50,13 @@ except ImportError:
 TKey = TypeVar('TKey')
 TValue = TypeVar('TValue')
 '''
-intersphinx_mapping = {'python': ('https://docs.python.org/3', None)}
+intersphinx_mapping = {
+    'python': ('https://docs.python.org/3.8', None),
+}
+extlinks = {
+    'pep': ('https://www.python.org/dev/peps/pep-%s/',
+            'PEP ')
+}
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']

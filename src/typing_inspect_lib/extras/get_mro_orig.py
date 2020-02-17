@@ -6,9 +6,7 @@ from .get_bases import _BaseObj
 from .get_mro import get_mro
 from .get_parents import get_parents
 from ..core import get_args, get_type_info, get_typing
-from ..core.helpers import (
-    PY_35, VERSION, is_typing, pairwise,
-)
+from ..core.helpers import helpers, links
 
 
 def _inner_set(values):
@@ -17,11 +15,11 @@ def _inner_set(values):
     return [set(value) for value in values_]
 
 
-if PY_35 and VERSION <= (3, 5, 2):
+if helpers.PY_35 and helpers.VERSION <= (3, 5, 2):
     def _ensure_consumed_parents(type_, parents):
         if parents:
             type_info = get_type_info(type_)
-            if is_typing(type_info.class_):
+            if links.is_typing(type_info.origin):
                 parents.pop(typing.Generic, None)
                 if not parents:
                     return
@@ -42,17 +40,17 @@ def get_mro_orig(type_):
     """
     parents = {}
     for parent in get_parents(type_):
-        parents.setdefault(parent.class_, []).append(parent)
+        parents.setdefault(parent.origin, []).append(parent)
 
     mro = ()
-    for class_ in get_mro(type_):
-        if class_ not in parents:
-            t_typing, t_class = get_typing(class_)
-            mro += (_BaseObj(t_typing or class_, t_class or class_, None),)
+    for o_type in get_mro(type_):
+        if o_type not in parents:
+            u_type, o_type_ = get_typing(o_type)
+            mro += (_BaseObj(u_type or o_type, o_type_ or o_type, None),)
             continue
 
-        classes = parents.pop(class_)
-        if not all(a.typing is b.typing for a, b in pairwise(classes)):
+        classes = parents.pop(o_type)
+        if not all(a.unwrapped is b.unwrapped for a, b in helpers.pairwise(classes)):
             raise ValueError('MRO has two different types using the same class')
 
         if all(c.orig is None for c in classes):
@@ -68,8 +66,8 @@ def get_mro_orig(type_):
                 new_args += (arg.pop(),)
             else:
                 new_args += (typing.Union[tuple(arg)],)
-        class__ = classes[0]
-        mro += (_BaseObj(class__.typing, class__.class_, class__.typing[new_args]),)
+        class_ = classes[0]
+        mro += (_BaseObj(class_.unwrapped, class_.origin, class_.unwrapped[new_args]),)
 
     _ensure_consumed_parents(type_, parents)
 

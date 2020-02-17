@@ -6,6 +6,7 @@ Welcome to Typing Inspect Lib's documentation!
     :caption: Contents:
 
     public_api
+    types
     python_compatibility
     internal/typing_inspect_lib
 

@@ -1,4 +1,8 @@
-# Custom
+# Peilon's extras
+.cache/
+.mypy_cache/
+.coverage
+.vscode/
 .mam/
 
 # Byte-compiled / optimized / DLL files

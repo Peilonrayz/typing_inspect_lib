@@ -1,0 +1,39 @@
+$global:
+  exclusions:
+  - .idea
+  - .mam
+  - .mypy_cache
+  - venv
+  src:
+    all:
+      directory: src
+      glob: ./src/**/*
+    python:
+      directory: src
+      glob: ./src/**/*.py
+    yaml:
+      directory: src
+      glob: ./src/**/*.yaml
+files:
+- additional.py
+mutations:
+- '@mam.tasks:mutations.sort_location'
+- '@mam.tasks:mutations.clean_extensions'
+- '@mam.tasks:mutations.merge_duplicates'
+- '@mam.tasks:mutations.remove_mam'
+- '@mam.tasks:mutations.remove_nosa'
+output: '@mam.tasks:output.default'
+tasks:
+- args:
+  - src
+  command: pylint
+  config:
+    dir: ./configs
+    flag: --rcfile
+    name: pylint.ini
+    path: ./configs/pylint.ini
+  converter: '@mam.tasks:converters.pylint'
+  deps:
+  - pylint
+  name: pylint
+  python: null

@@ -15,45 +15,23 @@ except ImportError:
 else:
     HAS_TE = True
 
-
-class TransparentMeta(type):
-    def __getattr__(self, item):
-        if item in self._cache:
-            return self._cache[item]
-
-        try:
-            value = getattr(self._obj, item)
-        except AttributeError:
-            if item in self._default:
-                value = self._default[item]
-            else:
-                value = self._missing(item)
-
-        setattr(self, item, value)
-        if getattr(self, item) is not value:
-            delattr(self, item)
-            self._cache[item] = value
-        return value
-
-
-class Transparent(type.__new__(TransparentMeta, 'TransparentMeta', (), {})):
-    _default = {}
-    _obj = object()
-    _cache = {}
-
-    @classmethod
-    def _missing(cls, key):
-        const_key = key.upper()
-        if const_key != key:
-            return getattr(cls, const_key)
-        return type(const_key, (), {'__repr__': lambda _: const_key})
+from .helpers import Transparent
 
 
 class typing_extensions(Transparent):
+    """Interface to Typing Extensions."""
     _obj = _typing_extensions
 
 
 class typing(Transparent):
+    """
+    Interface to :mod:`typing`.
+
+    Ensures the following are defined:
+
+    - :class:`typing._Union`.
+    - :class:`typing._ClassVar`.
+    """
     _obj = _typing
     _default = {
         '_Union': _typing.Union,
@@ -65,6 +43,15 @@ typings = typing_extensions if HAS_TE else typing
 
 
 class abc(Transparent):
+    """
+    Interface to :mod:`collections.abc`.
+
+    Ensures the following are defined:
+
+    - :class:`collections.abc.Generator`.
+    - :class:`collections.abc.ByteString`.
+    - :class:`collections.abc.Reversible`.
+    """
     _obj = _abc
     _default = {
         'Generator': _types.GeneratorType,
@@ -74,6 +61,14 @@ class abc(Transparent):
 
 
 class contextlib(Transparent):
+    """
+    Interface to :mod:`contextlib`.
+
+    Ensures the following are defined:
+
+    - :class:`contextlib.AbstractContextManager`.
+    - :class:`contextlib.AbstractAsyncContextManager`.
+    """
     _obj = _contextlib
     _default = {
         'AbstractContextManager': typings.ContextManager,
@@ -82,6 +77,14 @@ class contextlib(Transparent):
 
 
 class re(Transparent):
+    """
+    Interface to :mod:`re`.
+
+    Ensures the following are defined:
+
+    - :class:`re.Pattern`.
+    - :class:`re.Match`.
+    """
     _obj = _re
     _default = {
         'Pattern': type(_sre_compile.compile('', 0)),

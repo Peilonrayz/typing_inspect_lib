@@ -12,9 +12,12 @@ except ImportError:
 else:
     _HAS_TE = True
 
-from typing_inspect_lib.core.helpers import abc as _abc
-from typing_inspect_lib.core.helpers import contextlib as _contextlib
-from typing_inspect_lib.core.helpers import re, typing_extensions as typing_extensions_
+from typing_inspect_lib.core.helpers.compatibility import (
+    re,
+    typing_extensions as typing_extensions_,
+    contextlib as _contextlib,
+    abc as _abc
+)
 
 from .helpers import types_
 from .helpers.build_types import _build_tests
@@ -52,22 +55,14 @@ class BaseTestCase(TestCase):
             self.assertEqual(types_.build_types(type_), types_.VarType(type_))
         elif type_class is Types.NEW_TYPE:
             output = types_.build_types(type_)
-            try:
-                self.assertEqual(output, type_)
-            except AssertionError:
-                print(output)
-                print(output.typing)
-                print(typing_extensions_.NewType)
-                print(typing_extensions.NewType)
-                print(output.typing is typing_extensions_.NewType)
-                raise
+            self.assertEqual(output, type_)
         elif type_class is Types.NONE:
             self.assertEqual(types_.build_types(type_), None)
 
     def plain_class_test(self, type_, typing_, class_, args=None, parameters=None):
         args = tuple(types_.build_types(a) for a in args or [])
         parameters = tuple(types_.build_types(p) for p in parameters or [])
-        type_info = types_.Type(typing_, class_, args, parameters)
+        type_info = types_.Type(typing_, class_, type_, args, parameters)
         self.assertEqual(types_.build_types(type_), type_info)
 
     def class_test(self, type_, typing_, class_, t_args=None, args=None, parameters=None,
@@ -83,15 +78,21 @@ class BaseTestCase(TestCase):
                 args = tuple(types_.build_types(a) for a in args)
 
             if special:
-                type_info = types_.Type(typing_, class_, args, params)
+                type_info = types_.Type(typing_, class_, obj, args, params)
             else:
-                type_info = types_.Type(base, base, args, params)
+                type_info = types_.Type(base, base, obj, args, params)
             self.assertEqual(types_.build_types(obj), type_info)
 
 
 class SpecialTestCase(BaseTestCase):
     def test_any(self):
-        self.plain_test(typing.Any, Types.LITERAL)
+        self.plain_class_test(
+            typing.Any,
+            typing.Any,
+            typing.Any,
+            [],
+            [],
+        )
 
     def test_callable(self):
         self.plain_class_test(
@@ -666,7 +667,13 @@ class OneOffTestCase(BaseTestCase):
             or (PY36 and VERSION <= (3, 6, 1)),
             'NoReturn not in 3.5.[0,3] or 3.6.[0,1]')
     def test_no_return(self):
-        self.plain_test(typing.NoReturn, Types.LITERAL)
+        self.plain_class_test(
+            typing.NoReturn,
+            typing.NoReturn,
+            typing.NoReturn,
+            [],
+            [],
+        )
 
     @skipIf(PY35 and VERSION <= (3, 5, 1),
             'Text not in 3.5.[0,1]')
@@ -911,7 +918,13 @@ class ExtensionsTestCase(BaseTestCase):
         self.plain_test(TestType, Types.NEW_TYPE)
 
     def test_no_return(self):
-        self.plain_test(typing_extensions.NoReturn, Types.LITERAL)
+        self.plain_class_test(
+            typing_extensions.NoReturn,
+            typing_extensions.NoReturn,
+            typing_extensions.NoReturn,
+            [],
+            [],
+        )
 
     def test_text(self):
         self.plain_test(typing_extensions.Text, Types.LITERAL)
